@@ -1,0 +1,10 @@
+flask
+requests
+librosa
+tensorflow==2.15.0
+transformers==4.39.3
+torch
+numpy
+scikit-learn
+joblib
+matplotlib
