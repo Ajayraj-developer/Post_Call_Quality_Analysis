@@ -8,7 +8,7 @@ Follow these steps to set up and run the application after cloning the repositor
 
 ### 1. Clone the Repository
 ```sh
-git clone https://github.com/<your-username>/Post_Call_Quality_Analysis.git
+git clone https://github.com/Ajayraj-developer/Post_Call_Quality_Analysis.git
 cd Post_Call_Quality_Analysis
 ```
 
