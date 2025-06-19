@@ -42,5 +42,3 @@ python app.py
 - For any issues, check the code comments or raise an issue in the repository.
 
 ---
-
-Feel free to update this README with additional instructions as your project evolves.
