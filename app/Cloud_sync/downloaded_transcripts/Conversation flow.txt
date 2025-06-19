@@ -1,0 +1,16 @@
+11:56:12 | Agent | Good morning! This is Neha from IT Support. First of all, thank you for reaching out — your timing is excellent! | Positive | 0.95
+11:56:17 | Employee | Good morning, Neha! Thank you so much for responding so quickly — that’s really great. | Positive | 0.88
+11:56:23 | Agent | I’m happy to help! You're always awesome at reporting issues clearly. What can I assist you with today? | Positive | 0.87
+11:56:30 | Employee | I was working on a report, and Excel suddenly froze. It’s not a huge problem, but it interrupted my workflow. | Negative | 0.20
+11:56:37 | Agent | Ah, sorry to hear that! No worries — I’ll sort it out right away. You’ve done a great job describing the issue. | Positive | 0.88
+11:56:44 | Employee | Appreciate it. You all are always helpful and make things easier. | Neutral | 0.34
+11:56:53 | Agent | Thanks! I’ve restarted the Excel services in the background. Please try opening your file again now. | Neutral | 0.56
+11:57:03 | Employee | It opened instantly! Wow — that was amazing. Thanks for the quick fix. | Positive | 0.91
+11:57:13 | Agent | Fantastic! I'm glad it worked smoothly. Is there anything else bothering you? | Positive | 0.92
+11:57:19 | Employee | Well, the VPN dropped once yesterday, but everything else has been running perfectly. | Neutral | 0.56
+11:57:28 | Agent | Thanks for the heads-up! I’ll log that with the network team to ensure it's stable going forward. You’ve been very proactive — well done! | Positive | 0.84
+11:57:34 | Employee | Thanks! I genuinely love how responsive the IT team is. You’ve all been wonderful. | Positive | 0.85
+11:57:47 | Agent | That’s awesome to hear! We truly appreciate your patience and positive attitude. | Positive | 0.87
+11:57:54 | Employee | You guys are the best. I feel happy knowing things get resolved so quickly. | Positive | 0.86
+11:58:01 | Agent | That means a lot! We aim to provide the best support possible. Have a fantastic rest of your day! | Positive | 0.92
+11:58:11 | Employee | You too, Neha! Keep up the excellent work. | Positive | 0.95

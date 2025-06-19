@@ -1,0 +1,63 @@
+11:56:12 | Neha (IT Support):
+Good morning! This is Neha from IT Support. Thanks for hopping on the call — how can I help you today?
+
+11:56:17 | Ravi (Employee):
+Morning, Neha! Thanks for taking the time. I was updating a report in Excel, and it suddenly froze. It’s not responding at all.
+
+11:56:27 | Neha (IT Support):
+That’s frustrating! Are you working on your office laptop or a personal device?
+
+11:56:34 | Ravi (Employee):
+Office laptop, connected through VPN.
+
+11:56:41 | Neha (IT Support):
+Got it. Could you please share your screen with me?
+
+11:56:45 | Ravi (Employee):
+Sure… okay, screen shared.
+
+11:56:52 | Neha (IT Support):
+Thanks. I can see Excel is unresponsive. I’ll restart the Excel services remotely. Please hold on.
+
+11:57:05 | Ravi (Employee):
+Okay, go ahead.
+
+11:57:17 | Neha (IT Support):
+Done. Try opening the file again now.
+
+11:57:22 | Ravi (Employee):
+Wow, it opened right away! That fixed it. Thanks!
+
+11:57:29 | Neha (IT Support):
+Glad to hear that! Was it saved locally or on OneDrive?
+
+11:57:34 | Ravi (Employee):
+On OneDrive.
+
+11:57:38 | Neha (IT Support):
+Okay, just note that large files or files with macros work better when saved locally.
+
+11:57:47 | Ravi (Employee):
+Got it. Also, the VPN dropped once yesterday. Just thought I’d let you know.
+
+11:57:53 | Neha (IT Support):
+Thanks for the update. I’ll raise it with the network team to check the logs.
+
+11:58:01 | Ravi (Employee):
+Appreciate it. Your team’s support has been really fast lately.
+
+11:58:08 | Neha (IT Support):
+Thank you! Let me know if you need help with anything else.
+
+11:58:15 | Ravi (Employee):
+All good for now. Thanks again, Neha.
+
+11:58:20 | Neha (IT Support):
+Anytime! Have a great day.
+
+11:58:25 | Ravi (Employee):
+You too. Bye!
+
+11:58:28 | Neha (IT Support):
+Bye!
+
