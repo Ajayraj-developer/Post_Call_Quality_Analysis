@@ -145,6 +145,83 @@
       margin: 5px 5px 0 0;
     }
 
+    .custom-file-upload {
+      display: inline-block;
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .custom-file-upload:hover {
+      background-color: #0056b3;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    /* User dropdown styles */
+    .user-dropdown {
+      position: relative;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background-color 0.2s;
+    }
+
+    .user-info:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+
+    .user-dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      min-width: 200px;
+      z-index: 1000;
+      display: none;
+    }
+
+    .user-dropdown-menu.show {
+      display: block;
+    }
+
+    .dropdown-item {
+      padding: 12px 16px;
+      display: block;
+      color: #333;
+      text-decoration: none;
+      border-bottom: 1px solid #f8f9fa;
+      transition: background-color 0.2s;
+    }
+
+    .dropdown-item:hover {
+      background-color: #f8f9fa;
+      color: #333;
+    }
+
+    .dropdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .dropdown-item i {
+      margin-right: 8px;
+      width: 16px;
+    }
+
     @media (max-width: 991.98px) {
       .sidebar {
         width: 200px;
@@ -163,24 +240,6 @@
         margin-left: 0;
       }
     }
-    .custom-file-upload {
-    display: inline-block;
-    padding: 10px 20px;
-    cursor: pointer;
-    background-color: #007bff;
-    color: white;
-    border-radius: 5px;
-    font-weight: bold;
-    text-align: center;
-  }
-
-  .custom-file-upload:hover {
-    background-color: #0056b3;
-  }
-
-  input[type="file"] {
-    display: none;
-  }
   </style>
 </head>
 
@@ -214,11 +273,29 @@
             <span class="d-none d-lg-inline-flex">Notifications</span>
           </a>
         </div>
-        <div class="nav-item dropdown">
-          <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+        
+        <!-- User Dropdown -->
+        <div class="nav-item user-dropdown">
+          <div class="user-info" onclick="toggleUserDropdown()">
             <img class="rounded-circle me-2" src="https://i.pravatar.cc/32?img=3" alt="" style="width: 40px; height: 40px;">
-            <span class="d-none d-lg-inline-flex">John Cooper</span>
-          </a>
+            <span class="d-none d-lg-inline-flex" id="username">{{ user.name if user else 'Guest User' }}</span>
+            <i class="fas fa-chevron-down ms-2" style="font-size: 12px;"></i>
+          </div>
+          <div class="user-dropdown-menu" id="userDropdownMenu">
+            <div class="dropdown-item" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
+              <div style="font-weight: 600; color: #333;">{{ user.name if user else 'Guest User' }}</div>
+              <div style="font-size: 12px; color: #6c757d;">{{ user.preferred_username if user else '' }}</div>
+            </div>
+            <a href="#" class="dropdown-item">
+              <i class="fas fa-user-circle"></i>Profile
+            </a>
+            <a href="#" class="dropdown-item">
+              <i class="fas fa-cog"></i>Settings
+            </a>
+            <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: #dc3545;">
+              <i class="fas fa-sign-out-alt"></i>Logout
+            </a>
+          </div>
         </div>
       </div>
     </nav>
@@ -369,6 +446,22 @@
   const audioInputEmployee = document.getElementById('audio_file_employee');
   const fileNames = document.getElementById('fileNames');
   const audioPreview = document.getElementById('audioPreview');
+
+  // User dropdown functionality
+  function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdownMenu');
+    dropdown.classList.toggle('show');
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(event) {
+    const userDropdown = document.querySelector('.user-dropdown');
+    const dropdown = document.getElementById('userDropdownMenu');
+    
+    if (!userDropdown.contains(event.target)) {
+      dropdown.classList.remove('show');
+    }
+  });
 
   // Drag and drop highlight
   uploadBox.addEventListener('dragover', function (e) {

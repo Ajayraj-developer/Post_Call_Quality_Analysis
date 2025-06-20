@@ -1,10 +1,15 @@
 import os
-import joblib
 import numpy as np
 import re
+from transformers import pipeline as hf_pipeline
+import torch
 
-ROERTA_PIPELINE_PATH = os.path.join(os.path.dirname(__file__), 'model/roberta_sentiment_pipeline.pkl')
-pipeline = joblib.load(ROERTA_PIPELINE_PATH)
+# Force PyTorch backend and avoid TensorFlow issues
+pipeline = hf_pipeline(
+    "sentiment-analysis", 
+    model="cardiffnlp/twitter-roberta-base-sentiment-latest",
+    framework="pt"  # Explicitly use PyTorch
+)
 
 def predict_sentiment(text, pipeline):
     result = pipeline(text)[0]

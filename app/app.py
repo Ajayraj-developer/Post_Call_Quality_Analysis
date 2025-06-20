@@ -1,14 +1,199 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, session, redirect, url_for
 import os
+from dotenv import load_dotenv
+import msal
+import requests
+import json
+import tempfile
 from analytics import PROMPTS, generate_section
 from emotion_inference import calculate_average_speech_rate, get_calm_score, get_vad_over_time
 from context_based import get_agent_employee_sentiment, parse_transcript_lines, get_sentiment_flow
+from functools import wraps
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'pxJ8Q~BxiUUQXC0ngGcm8FWIntjMvFRPMhQOWcrG')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Create a directory for token cache files
+TOKEN_CACHE_DIR = 'token_cache'
+os.makedirs(TOKEN_CACHE_DIR, exist_ok=True)
+
+# Microsoft Authentication Configuration
+CLIENT_ID = "9297e893-98da-423c-8c1f-24c626c6c47a"
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
+AUTHORITY = "https://login.microsoftonline.com/f5791d91-daca-4d28-8700-680f7a2f8b6a"
+REDIRECT_PATH = "/getAToken"
+SCOPE = ["User.ReadBasic.All"]
+REDIRECT_URI = "http://localhost:5000/getAToken"
+
+# Add validation to ensure CLIENT_SECRET is set
+if not CLIENT_SECRET:
+    raise ValueError("CLIENT_SECRET environment variable is not set. Please set it before running the application.")
+
+def _get_cache_file_path():
+    """Get the path for the token cache file based on session ID"""
+    session_id = session.get('session_id')
+    if not session_id:
+        import uuid
+        session_id = str(uuid.uuid4())
+        session['session_id'] = session_id
+    return os.path.join(TOKEN_CACHE_DIR, f'token_cache_{session_id}.json')
+
+def _load_cache():
+    cache = msal.SerializableTokenCache()
+    cache_file = _get_cache_file_path()
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, 'r') as f:
+                cache.deserialize(f.read())
+        except (json.JSONDecodeError, IOError):
+            # If cache file is corrupted, ignore it
+            pass
+    return cache
+
+def _save_cache(cache):
+    if cache.has_state_changed:
+        cache_file = _get_cache_file_path()
+        try:
+            with open(cache_file, 'w') as f:
+                f.write(cache.serialize())
+        except IOError:
+            # If we can't save the cache, continue anyway
+            pass
+
+def _build_msal_app(cache=None, authority=None):
+    return msal.ConfidentialClientApplication(
+        CLIENT_ID,
+        authority=authority or AUTHORITY,
+        client_credential=CLIENT_SECRET,
+        token_cache=cache
+    )
+
+def _build_auth_code_flow(authority=None, scopes=None):
+    return _build_msal_app(authority=authority).initiate_auth_code_flow(
+        scopes or [],
+        redirect_uri=REDIRECT_URI
+    )
+
+def _get_token_from_cache(scope=None):
+    cache = _load_cache()
+    cca = _build_msal_app(cache=cache)
+    accounts = cca.get_accounts()
+    if accounts:
+        result = cca.acquire_token_silent(scope or [], account=accounts[0])
+        _save_cache(cache)
+        return result
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("user"):
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def _get_flow_file_path():
+    """Get the path for the flow cache file based on session ID"""
+    session_id = session.get('session_id')
+    if not session_id:
+        import uuid
+        session_id = str(uuid.uuid4())
+        session['session_id'] = session_id
+    return os.path.join(TOKEN_CACHE_DIR, f'flow_{session_id}.json')
+
+def _save_flow(flow):
+    """Save the OAuth flow to a file"""
+    flow_file = _get_flow_file_path()
+    try:
+        with open(flow_file, 'w') as f:
+            json.dump(flow, f)
+    except IOError:
+        pass
+
+def _load_flow():
+    """Load the OAuth flow from a file"""
+    flow_file = _get_flow_file_path()
+    if os.path.exists(flow_file):
+        try:
+            with open(flow_file, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    return None
+
+@app.route("/login")
+def login():
+    # Create the full OAuth flow and save it to file
+    flow = _build_auth_code_flow(scopes=SCOPE)
+    _save_flow(flow)
+    return render_template("login.html", auth_url=flow["auth_uri"])
+
+@app.route(REDIRECT_PATH)
+def authorized():
+    try:
+        cache = _load_cache()
+        
+        # Load the complete flow from file
+        flow = _load_flow()
+        if not flow:
+            print("No flow found in cache")
+            return redirect(url_for("login"))
+        
+        result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(
+            flow, request.args)
+        
+        if "error" in result:
+            print(f"Authentication error: {result}")
+            return render_template("auth_error.html", result=result)
+        
+        # Store only essential user info in session
+        user_info = result.get("id_token_claims", {})
+        session["user"] = {
+            "name": user_info.get("name", "Unknown"),
+            "preferred_username": user_info.get("preferred_username", ""),
+            "oid": user_info.get("oid", "")
+        }
+        
+        _save_cache(cache)
+        
+        # Clean up flow file
+        try:
+            flow_file = _get_flow_file_path()
+            if os.path.exists(flow_file):
+                os.remove(flow_file)
+        except Exception:
+            pass
+        
+    except Exception as e:
+        print(f"Authorization error: {e}")
+        return redirect(url_for("login"))
+    
+    return redirect(url_for("upload_audio"))
+
+@app.route("/logout")
+def logout():
+    # Clean up token cache file and flow file
+    try:
+        cache_file = _get_cache_file_path()
+        if os.path.exists(cache_file):
+            os.remove(cache_file)
+        flow_file = _get_flow_file_path()
+        if os.path.exists(flow_file):
+            os.remove(flow_file)
+    except Exception:
+        pass
+    
+    session.clear()
+    return redirect(
+        AUTHORITY + "/oauth2/v2.0/logout" +
+        "?post_logout_redirect_uri=" + url_for("login", _external=True))
+
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 def upload_audio():
     if request.method == 'POST':
         audio_file_agent = request.files.get('audio_file_agent')
@@ -117,9 +302,10 @@ def upload_audio():
             employee_sentiment_percent=employee_sentiment_percent,
             sentiment_flow=sentiment_flow,
             overall_score=overall_score,
+            user=session.get("user"),
         )
 
-    return render_template('upload.html')
+    return render_template('upload.html', user=session.get("user"))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
