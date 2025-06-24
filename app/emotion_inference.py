@@ -110,7 +110,7 @@ def get_calm_score(audio_path):
         'disgust': 'neutral'
     }
     polarity_numeric = {'calm': -1, 'neutral': 0, 'angry': 1}
-    angry_threshold = 0.95
+    angry_threshold = 0.9
     while start + window <= duration:
         segment = y[int(start*sr):int((start+window)*sr)]
         features = extract_features(segment, sr=sr, frame_length=2048, hop_length=512)
@@ -213,8 +213,8 @@ def get_vad_over_time(audio_path):
             'angry':    [0.1, 0.9, 0.7],
             'calm':     [0.7, 0.2, 0.6],
             'disgust':  [0.1, 0.8, 0.3],
-            'fear':     [0.1, 0.9, 0.2],
-            'happy':    [0.9, 0.7, 0.8],
+            'fear':     [0.1, 0.1, 0.2],
+            'happy':    [0.9, 0.8, 0.8],
             'neutral':  [0.5, 0.5, 0.5],
             'sad':      [0.2, 0.3, 0.4],
             'surprise': [0.8, 0.8, 0.6],

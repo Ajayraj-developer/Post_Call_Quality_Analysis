@@ -20,14 +20,21 @@ def authenticate_google_drive():
     """
     creds = None
     if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        try:
+            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        except Exception as e:
+            print(f"Error loading credentials from token.json: {e}")
+            print("Deleting malformed token.json and re-authenticating.")
+            os.remove('token.json')  # Delete the malformed token file
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
+            # Use the correct path for credentials.json
+            credentials_path = os.path.join(os.path.dirname(__file__), 'credentials.json')
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+                credentials_path, SCOPES)
             creds = flow.run_local_server(port=8080)
         # Save the credentials for the next run
         with open('token.json', 'w') as token:
