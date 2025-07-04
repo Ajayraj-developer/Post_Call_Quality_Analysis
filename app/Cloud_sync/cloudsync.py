@@ -130,7 +130,7 @@ if __name__ == '__main__':
     # E.g., if the URL is https://drive.google.com/drive/folders/YOUR_FOLDER_ID_HERE
     # The folder ID is 'YOUR_FOLDER_ID_HERE'
     TARGET_FOLDER_ID = '1F5JG1JCG94Pkuj5CPsevbk1x_BqWg5vJ' # <--- IMPORTANT: Change this!
-    DOWNLOAD_DIRECTORY = 'downloaded_transcripts' # Directory to save files to
+    DOWNLOAD_DIRECTORY = 'downloaded_files' # Directory to save files to
 
     if not os.path.exists(DOWNLOAD_DIRECTORY):
         os.makedirs(DOWNLOAD_DIRECTORY)

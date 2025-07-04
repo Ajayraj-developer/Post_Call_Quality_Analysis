@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Call Dashboard</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    /* Copy sidebar, navbar, table, and content styles from upload.html */
+    :root { --primary: #0d6efd; --light: #f8f9fa; --dark: #343a40; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--light); }
+    .sidebar { position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; width: 250px; background: var(--light); overflow-y: auto; }
+    .sidebar .navbar .nav-link { padding: 7px 20px; color: var(--dark); font-weight: 650; border-left: 3px solid var(--light); border-radius: 0 30px 30px 0; font-size: 20px; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: var(--primary); background: #fff; border-color: var(--primary); }
+    .sidebar .nav-link i { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; background: #fff; border-radius: 40px; }
+    .content { margin-left: 250px; min-height: 100vh; background: #fff; }
+    .content .navbar { box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .content .navbar .nav-link { margin-left: 25px; padding: 12px 0; color: var(--dark); }
+    .card { border: 1px dashed #ccc; border-radius: 10px; transition: all 0.3s ease; }
+    .card:hover { border-color: var(--primary); }
+    .table { background: #fff; border-radius: 10px; overflow: hidden; }
+    .table thead { background: var(--light); color: var(--dark); }
+    .table th, .table td { vertical-align: middle; }
+    @media (max-width: 991.98px) { .sidebar { width: 200px; } .content { margin-left: 200px; } }
+    @media (max-width: 767.98px) { .sidebar { position: static; width: 100%; } .content { margin-left: 0; } }
+  </style>
+</head>
+<body>
+<div class="container-fluid position-relative bg-white d-flex p-0">
+  <!-- Sidebar -->
+  <div class="sidebar pe-4 pb-3">
+    <nav class="navbar bg-light navbar-light">
+      <a href="../dashmin/index.html" class="navbar-brand mx-4 mb-3 d-flex align-items-center" >
+        <img src="../static/img/logoo.png" alt="Post Call Logo" style="height: 40px; width: auto; margin-right: 10px;border-radius: 60px;margin-left: -10px;" >
+        <h3 class="mb-0" style="font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; color: #333;margin-top: 5px; font-size: 35px;">EchoVerge</h3>
+      </a>
+      <div class="navbar-nav w-100">
+        <a href="{{ url_for('upload_audio') }}" class="nav-item nav-link"><i class="fa fa-upload me-2"></i>Upload</a>
+        <a href="{{ url_for('dashboard') }}" class="nav-item nav-link active"><i class="fa fa-list me-2"></i>Dashboard</a>
+        <a href="../dashmin/form.html" class="nav-item nav-link"><i class="far fa-file-alt me-2"></i>FAQs</a>
+        <a href="#" class="nav-item nav-link"><i class="fa fa-cog me-2"></i>Settings</a>
+      </div>
+    </nav>
+  </div>
+  <!-- Content -->
+  <div class="content w-100">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+      <div class="navbar-nav align-items-center ms-auto">
+        <div class="nav-item dropdown">
+          <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fa fa-bell me-2"></i>
+            <span class="d-none d-lg-inline-flex">Notifications</span>
+          </a>
+        </div>
+        <div class="nav-item dropdown">
+          <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+            <img class="rounded-circle me-2" src="https://i.pravatar.cc/32?img=3" alt="" style="width: 40px; height: 40px;">
+            <span class="d-none d-lg-inline-flex" id="username">{{ user.name if user else 'Guest User' }}</span>
+            
+          </a>
+          <div class="dropdown-menu dropdown-menu-end">
+            <div class="dropdown-item" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
+              <div style="font-weight: 600; color: #333;">{{ user.name if user else 'Guest User' }}</div>
+              <div style="font-size: 12px; color: #6c757d;">{{ user.preferred_username if user else '' }}</div>
+            </div>
+            <a href="#" class="dropdown-item"><i class="fas fa-user-circle"></i>Profile</a>
+            <a href="#" class="dropdown-item"><i class="fas fa-cog"></i>Settings</a>
+            <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: #dc3545;"><i class="fas fa-sign-out-alt"></i>Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <!-- Dashboard Section -->
+    <div class="container-fluid pt-4 px-4">
+      <h3>Call List</h3>
+      <!-- Search and Filter -->
+      <div class="d-flex justify-content-between mb-3">
+        <div class="input-group" style="width: 300px;">
+          <input type="text" class="form-control" id="agentSearchInput" placeholder="Search by agent name...">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+        </div>
+        <button class="btn btn-outline-secondary">Filters <i class="fas fa-filter"></i></button>
+      </div>
+      <!-- Table -->
+      <div class="table-responsive">
+        <table class="table table-bordered" id="callListTable">
+          <thead>
+            <tr>
+              <th>Call ID</th>
+              <th>Timestamp</th>
+              <th>Duration</th>
+              <th>Agent Name</th>
+              <th>Department</th>
+              <th>Topic</th>
+              <th>Issue Resolved</th>
+              <th>Sentiment</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if call_list and call_list|length > 0 %}
+              {% for call in call_list %}
+              <tr>
+                <td>{{ call.get('call_id', 'N/A') }}</td>
+                <td>{{ call['timestamp'] }}</td>
+                <td>{{ call.get('duration', '') }}</td>
+                <td>
+                  {% if call.get('agent_image_url') %}
+                    <img src="{{ call['agent_image_url'] }}" alt="Agent" style="width:32px;height:32px;border-radius:50%;margin-right:6px;">
+                  {% endif %}
+                  {{ call.get('agent_name', 'N/A') }}
+                </td>
+                <td>{{ call.get('department', 'N/A') }}</td>
+                <td>{{ call.get('topic', 'N/A') }}</td>
+                <td>
+                  {% if call.get('resolved', '').lower() == 'yes' %}
+                    <span class="badge bg-success">Yes</span>
+                  {% else %}
+                    <span class="badge bg-danger">No</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if call.get('sentiment_icon') %}
+                    {{ call['sentiment_icon'] }} {{ call.get('sentiment', '') }}
+                  {% else %}
+                    {{ call.get('sentiment', '') }}
+                  {% endif %}
+                </td>
+                <td>
+                  <a class="btn btn-sm btn-primary" href="{{ url_for('view_call', call_id=call['_id']) }}">View</a>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="8" class="text-center">No calls uploaded yet.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      <!-- Pagination -->
+      <div class="d-flex justify-content-between align-items-center">
+        <span>Showing 1 to 5 of 50</span>
+        <div>
+          <button class="btn btn-outline-primary me-2" id="prevPageBtn" disabled>Previous</button>
+          <button class="btn btn-outline-primary" id="nextPageBtn">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // --- Pagination and Search Integration (copied from upload.html) ---
+  const rowsPerPage = 10;
+  let currentPage = 1;
+  const table = document.getElementById('callListTable');
+  const tbody = table.getElementsByTagName('tbody')[0];
+  let allRows = Array.from(tbody.getElementsByTagName('tr'));
+  function filterRows() {
+    const filter = document.getElementById('agentSearchInput').value.toLowerCase();
+    allRows.forEach(row => {
+      const agentCell = row.getElementsByTagName('td')[3];
+      if (agentCell) {
+        const text = agentCell.textContent || agentCell.innerText;
+        if (text.toLowerCase().indexOf(filter) > -1) {
+          row.classList.remove('filtered-out');
+        } else {
+          row.classList.add('filtered-out');
+        }
+      }
+    });
+  }
+  function updatePagination() {
+    filterRows();
+    const filteredRows = allRows.filter(row => !row.classList.contains('filtered-out'));
+    const totalRows = filteredRows.length;
+    const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    allRows.forEach(row => row.style.display = 'none');
+    filteredRows.forEach((row, i) => {
+      row.style.display = (i >= start && i < end) ? '' : 'none';
+    });
+    // Update info text
+    const info = document.querySelector('.d-flex.justify-content-between.align-items-center span');
+    if (info) {
+      const showingStart = totalRows === 0 ? 0 : start + 1;
+      const showingEnd = Math.min(end, totalRows);
+      info.textContent = `Showing ${showingStart} to ${showingEnd} of ${totalRows}`;
+    }
+    // Update button states
+    document.getElementById('prevPageBtn').disabled = currentPage === 1;
+    document.getElementById('nextPageBtn').disabled = currentPage === totalPages || totalRows === 0;
+  }
+  document.getElementById('prevPageBtn').addEventListener('click', function() {
+    if (currentPage > 1) {
+      currentPage--;
+      updatePagination();
+    }
+  });
+  document.getElementById('nextPageBtn').addEventListener('click', function() {
+    const filteredRows = allRows.filter(row => !row.classList.contains('filtered-out'));
+    const totalPages = Math.ceil(filteredRows.length / rowsPerPage) || 1;
+    if (currentPage < totalPages) {
+      currentPage++;
+      updatePagination();
+    }
+  });
+  document.getElementById('agentSearchInput').addEventListener('input', function() {
+    currentPage = 1;
+    updatePagination();
+  });
+  // Initial pagination
+  updatePagination();
+</script>
+</body>
+</html>

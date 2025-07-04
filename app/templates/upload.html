@@ -195,8 +195,8 @@
       <h3 class="mb-0" style="font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; color: #333;margin-top: 5px; font-size: 35px;">EchoVerge</h3>
       </a>
       <div class="navbar-nav w-100">
-        <a href="../dashmin/index.html" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
-        <a href="../templates/new.html" class="nav-item nav-link active"><i class="fa fa-upload me-2"></i>Upload</a>
+        <a href="{{ url_for('upload_audio') }}" class="nav-item nav-link active"><i class="fa fa-upload me-2"></i>Upload</a>
+        <a href="{{ url_for('dashboard') }}" class="nav-item nav-link"><i class="fa fa-list me-2"></i>Dashboard</a>
         <a href="../dashmin/form.html" class="nav-item nav-link"><i class="far fa-file-alt me-2"></i>FAQs</a>
         <a href="#" class="nav-item nav-link"><i class="fa fa-cog me-2"></i>Settings</a>
       </div>
@@ -217,150 +217,110 @@
         <div class="nav-item dropdown">
           <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
             <img class="rounded-circle me-2" src="https://i.pravatar.cc/32?img=3" alt="" style="width: 40px; height: 40px;">
-            <span class="d-none d-lg-inline-flex">John Cooper</span>
+            <span class="d-none d-lg-inline-flex" id="username">{{ user.name if user else 'Guest User' }}</span>
+            
           </a>
+          <div class="dropdown-menu dropdown-menu-end">
+            <div class="dropdown-item" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
+              <div style="font-weight: 600; color: #333;">{{ user.name if user else 'Guest User' }}</div>
+              <div style="font-size: 12px; color: #6c757d;">{{ user.preferred_username if user else '' }}</div>
+            </div>
+            <a href="#" class="dropdown-item">
+              <i class="fas fa-user-circle"></i>Profile
+            </a>
+            <a href="#" class="dropdown-item">
+              <i class="fas fa-cog"></i>Settings
+            </a>
+            <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: #dc3545;">
+              <i class="fas fa-sign-out-alt"></i>Logout
+            </a>
+          </div>
         </div>
       </div>
     </nav>
 
     <!-- Upload Section -->
     <div class="container-fluid pt-4 px-4" >
-      <h3>Call List</h3>
+      <h3>Upload Call Data</h3>
       <div class="card mb-4">
         <div class="card-body text-center" style="height: 300pxpx;background-color: #ffffff;border-radius: 10px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);border: 1px solid #e5e7eb;  " >
-            <form method="POST" action="{{ url_for('upload_audio') }}" enctype="multipart/form-data">
-              <div id="uploadBox" style="margin-top: 20px; background-color: rgb(241, 237, 237); padding: 20px; border-radius: 10px; border: 2px dashed #ccc; text-align: center; transition: 0.3s;border-radius: 12px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);border: 1px solid #e5e7eb;">
-                  <div style="font-size: 14px; color: #888;">
-                      <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                      <h5><strong>Upload Transcript File</strong></h5>
-                      <p class="text-muted">Drag and drop files here, or click to browse</p>
+          <form method="POST" action="{{ url_for('upload_audio') }}" enctype="multipart/form-data" id="uploadForm">
+            <div id="uploadBox" style="margin-top: 20px; background-color: rgb(241, 237, 237); padding: 20px; border-radius: 10px; border: 2px dashed #ccc; text-align: center; transition: 0.3s;border-radius: 12px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);border: 1px solid #e5e7eb;">
+                <div style="font-size: 14px; color: #888;">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                    <h5><strong>Upload Transcript File</strong></h5>
+                    <p class="text-muted">Drag and drop files here, or click to browse</p>
 
-                      <label for="transcript_file" class="custom-file-upload">
-                          Choose Transcript File
-                      </label>
-                      <input type="file" id="transcript_file" name="transcript_file" accept=".txt" required>
-                      <br><br>
-                      <div style="display: flex; justify-content: center; gap: 32px;">
-                        <div>
-                          <label for="audio_file_agent" class="custom-file-upload">
-                              Choose Agent Audio File
-                          </label>
-                          <input type="file" id="audio_file_agent" name="audio_file_agent" accept="audio/*" required>
-                        </div>
-                        <div>
-                          <label for="audio_file_employee" class="custom-file-upload">
-                              Choose Employee Audio File
-                          </label>
-                          <input type="file" id="audio_file_employee" name="audio_file_employee" accept="audio/*" required>
-                        </div>
+                    <label for="transcript_file" class="custom-file-upload">
+                        Choose Transcript File
+                    </label>
+                    <input type="file" id="transcript_file" name="transcript_file" accept=".txt" required>
+                    <br><br>
+                    <div style="display: flex; justify-content: center; gap: 32px;">
+                      <div>
+                        <label for="audio_file_agent" class="custom-file-upload">
+                            Choose Agent Audio File
+                        </label>
+                        <input type="file" id="audio_file_agent" name="audio_file_agent" accept="audio/*" required>
                       </div>
-                      <div class="file-names mt-2" id="fileNames"></div>
-                      <div id="audioPreview"></div>
-                  </div>
+                      <div>
+                        <label for="audio_file_employee" class="custom-file-upload">
+                            Choose Employee Audio File
+                        </label>
+                        <input type="file" id="audio_file_employee" name="audio_file_employee" accept="audio/*" required>
+                      </div>
+                    </div>
+                    <div class="file-names mt-2" id="fileNames"></div>
+                    <div id="audioPreview"></div>
+                </div>
+            </div>
+            <div class="mt-3">
+              <div style="display: flex; justify-content: center; margin-top: 20px;">
+                <button type="submit" class="btn btn-success" style="padding: 10px 25px; font-size: 16px;">Upload</button>
               </div>
-
-              <div class="mt-3">
-                  <div style="display: flex; justify-content: center; margin-top: 20px;">
-                      <button type="submit" class="btn btn-success" style="padding: 10px 25px; font-size: 16px;">Upload</button>
-                  </div>
+              <div id="uploadSpinner" style="display:none; margin-top:20px; text-align:center;">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                  <span class="visually-hidden">Uploading...</span>
+                </div>
+                <div style="margin-top:8px; color:#007bff; font-weight:500;">Processing, please wait...</div>
               </div>
+            </div>
           </form>
         </div>
       </div>
 
       <!-- Sync from Cloud Button -->
       <div style="text-align:center; margin-top:20px;">
-        <form method="POST" action="{{ url_for('sync_cloud') }}">
+        <form id="cloudSyncForm" method="POST" action="{{ url_for('sync_cloud') }}" style="display:inline-block;">
           <button type="submit" class="btn btn-primary">Sync from Cloud</button>
         </form>
-      </div>
-
-      <!-- Search and Filter -->
-      <div class="d-flex justify-content-between mb-3">
-        <div class="input-group" style="width: 300px;">
-          <input type="text" class="form-control" placeholder="Search by agent, department, or sentiment...">
-          <span class="input-group-text"><i class="fas fa-search"></i></span>
+        <div id="cloudSyncSpinner" style="display:none; margin-top:10px; text-align:center;">
+          <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+            <span class="visually-hidden">Syncing...</span>
+          </div>
+          <div style="margin-top:8px; color:#007bff; font-weight:500;">Syncing cloud files, please wait...</div>
         </div>
-        <button class="btn btn-outline-secondary">Filters <i class="fas fa-filter"></i></button>
-      </div>
-
-      <!-- Table -->
-      <div class="table-responsive">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Duration</th>
-              <th>Agent Name</th>
-              <th>Department</th>
-              <th>Topic</th>
-              <th>Issue Resolved</th>
-              <th>Sentiment</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>2025-05-06 08:30 AM</td>
-              <td>12:35</td>
-              <td><img src="https://i.pravatar.cc/32?img=1" class="rounded-circle me-2" style="width: 30px; height: 30px;">Sarah Wilson</td>
-              <td>Customer Support</td>
-              <td>Billing Issue</td>
-              <td><span class="badge bg-success">Yes</span></td>
-              <td>😊</td>
-              <td><a href="#" class="btn btn-sm btn-primary">View</a></td>
-            </tr>
-            <tr>
-              <td>2025-05-06 10:15 AM</td>
-              <td>08:22</td>
-              <td><img src="https://i.pravatar.cc/32?img=2" class="rounded-circle me-2" style="width: 30px; height: 30px;">Mike Johnson</td>
-              <td>Technical Support</td>
-              <td>Account Access</td>
-              <td><span class="badge bg-warning">Pending</span></td>
-              <td>😐</td>
-              <td><a href="#" class="btn btn-sm btn-primary">View</a></td>
-            </tr>
-            <tr>
-              <td>2025-05-06 11:42 AM</td>
-              <td>15:47</td>
-              <td><img src="https://i.pravatar.cc/32?img=4" class="rounded-circle me-2" style="width: 30px; height: 30px;">Emma Davis</td>
-              <td>Sales</td>
-              <td>Product Demo</td>
-              <td><span class="badge bg-success">Yes</span></td>
-              <td>😊</td>
-              <td><a href="#" class="btn btn-sm btn-primary">View</a></td>
-            </tr>
-            <tr>
-              <td>2025-05-06 12:30 PM</td>
-              <td>05:18</td>
-              <td><img src="https://i.pravatar.cc/32?img=5" class="rounded-circle me-2" style="width: 30px; height: 30px;">Tom Smith</td>
-              <td>Technical Support</td>
-              <td>Network Issues</td>
-              <td><span class="badge bg-warning">Pending</span></td>
-              <td>😐</td>
-              <td><a href="#" class="btn btn-sm btn-primary">View</a></td>
-            </tr>
-            <tr>
-              <td>2025-05-06 10:44 AM</td>
-              <td>09:55</td>
-              <td><img src="https://i.pravatar.cc/32?img=6" class="rounded-circle me-2" style="width: 30px; height: 30px;">Lisa Anderson</td>
-              <td>Customer Support</td>
-              <td>Refund Request</td>
-              <td><span class="badge bg-success">Yes</span></td>
-              <td>😊</td>
-              <td><a href="#" class="btn btn-sm btn-primary">View</a></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      <div class="d-flex justify-content-between align-items-center">
-        <span>Showing 1 to 5 of 50</span>
-        <div>
-          <button class="btn btn-outline-primary me-2">Previous</button>
-          <button class="btn btn-outline-primary">Next</button>
+        <button id="localSyncBtn" class="btn btn-secondary ms-2">Sync from Local</button>
+        <div id="localSyncSpinner" style="display:none; margin-top:10px; text-align:center;">
+          <div class="spinner-border text-secondary" role="status" style="width: 2.5rem; height: 2.5rem;">
+            <span class="visually-hidden">Syncing...</span>
+          </div>
+          <div style="margin-top:8px; color:#6c757d; font-weight:500;">Syncing local files, please wait...</div>
         </div>
+      </div>
+
+      <!-- Sync Interval Control -->
+      <div style="text-align:center; margin-top:20px;">
+        <label for="syncIntervalSelect" style="font-weight:500; margin-right:8px;">Local Sync Interval:</label>
+        <select id="syncIntervalSelect" class="form-select d-inline-block" style="width:120px; display:inline-block;">
+          <option value="1">1 min</option>
+          <option value="5">5 min</option>
+          <option value="10">10 min</option>
+          <option value="30">30 min</option>
+          <option value="60">60 min</option>
+        </select>
+        <button id="setSyncIntervalBtn" type="button" class="btn btn-info ms-2">Set Sync Interval</button>
+        <span id="syncIntervalStatus" style="margin-left:12px; color:#198754; font-weight:500;"></span>
       </div>
     </div>
   </div>
@@ -435,6 +395,127 @@
       audioPreview.innerHTML = '';
     }
     fileNames.innerHTML = html;
+  }
+
+  // User dropdown functionality
+  function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdownMenu');
+    dropdown.classList.toggle('show');
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(event) {
+    const userDropdown = document.querySelector('.user-dropdown');
+    const dropdown = document.getElementById('userDropdownMenu');
+    if (userDropdown && dropdown && !userDropdown.contains(event.target)) {
+      dropdown.classList.remove('show');
+    }
+  });
+
+  // Show spinner on upload
+  document.getElementById('uploadForm').addEventListener('submit', function() {
+    document.getElementById('uploadSpinner').style.display = '';
+  });
+
+  // Local Sync Button Handler
+  const localSyncBtn = document.getElementById('localSyncBtn');
+  const localSyncSpinner = document.getElementById('localSyncSpinner');
+  if (localSyncBtn) {
+    localSyncBtn.addEventListener('click', function() {
+      localSyncBtn.disabled = true;
+      localSyncSpinner.style.display = '';
+      fetch('{{ url_for('sync_local') }}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => {
+        localSyncBtn.disabled = false;
+        localSyncSpinner.style.display = 'none';
+        if (response.ok) {
+          location.reload();
+        } else {
+          response.text().then(text => alert('Local sync failed: ' + text));
+        }
+      })
+      .catch(err => {
+        localSyncBtn.disabled = false;
+        localSyncSpinner.style.display = 'none';
+        alert('Local sync error: ' + err);
+      });
+    });
+  }
+
+  // Cloud Sync Form Handler
+  const cloudSyncForm = document.getElementById('cloudSyncForm');
+  const cloudSyncSpinner = document.getElementById('cloudSyncSpinner');
+  if (cloudSyncForm) {
+    cloudSyncForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      cloudSyncSpinner.style.display = '';
+      const formData = new FormData(cloudSyncForm);
+      fetch(cloudSyncForm.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => {
+        cloudSyncSpinner.style.display = 'none';
+        if (response.ok) {
+          location.reload();
+        } else {
+          response.text().then(text => alert('Cloud sync failed: ' + text));
+        }
+      })
+      .catch(err => {
+        cloudSyncSpinner.style.display = 'none';
+        alert('Cloud sync error: ' + err);
+      });
+    });
+  }
+
+  // --- Sync Interval Control ---
+  const setSyncIntervalBtn = document.getElementById('setSyncIntervalBtn');
+  const syncIntervalSelect = document.getElementById('syncIntervalSelect');
+  const syncIntervalStatus = document.getElementById('syncIntervalStatus');
+  // Fetch and display current interval on page load
+  fetch('/get_sync_status', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.interval) {
+        syncIntervalSelect.value = data.interval;
+        syncIntervalStatus.textContent = `Current: ${data.interval} min${data.interval > 1 ? 's' : ''}`;
+      }
+      if (data && data.running === false) {
+        syncIntervalStatus.textContent += ' (Not running)';
+      }
+    });
+  if (setSyncIntervalBtn && syncIntervalSelect) {
+    setSyncIntervalBtn.addEventListener('click', function() {
+      setSyncIntervalBtn.disabled = true;
+      const minutes = parseInt(syncIntervalSelect.value);
+      fetch('/set_sync_interval', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ minutes })
+      })
+      .then(response => response.json())
+      .then(data => {
+        setSyncIntervalBtn.disabled = false;
+        if (data.status === 'success') {
+          syncIntervalStatus.textContent = `Interval set to ${data.interval} min${data.interval > 1 ? 's' : ''}`;
+          setTimeout(() => { syncIntervalStatus.textContent = ''; }, 3000);
+        } else {
+          syncIntervalStatus.textContent = 'Failed to set interval';
+        }
+      })
+      .catch(err => {
+        setSyncIntervalBtn.disabled = false;
+        syncIntervalStatus.textContent = 'Error setting interval';
+      });
+    });
   }
 </script>
 
