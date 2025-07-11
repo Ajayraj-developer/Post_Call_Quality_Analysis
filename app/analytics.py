@@ -16,7 +16,8 @@ PROMPTS = {
   "topic": "One short-form topic: use 'AcctSec', 'Billing', 'Tech', 'LoginHelp', 'Usage', 'Feedback', 'SubsMgmt', or 'Order'",
   "product": "one short-form word :Product involved in the call",
   "resolved": "Yes/No",
-  "feedback_received": "Yes/No"
+  "feedback_received": "Yes/No",
+  "department":"Extract department in which agent works, if none then  use IT Support"
 }
 
 Call transcript: {transcript}""",

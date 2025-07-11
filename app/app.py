@@ -14,6 +14,8 @@ import glob
 import wave
 import re
 from apscheduler.schedulers.background import BackgroundScheduler
+import certifi
+
 
 # Microsoft Authentication Configuration
 CLIENT_ID = "9297e893-98da-423c-8c1f-24c626c6c47a"
@@ -365,8 +367,8 @@ def upload_audio():
                 return ("N/A", "")
             if percent >= 66:
                 return ("Positive", "😊")
-            elif percent >= 33:
-                return ("Neutral", "😐")
+            elif percent >= 45:
+                return ("Neutral", "😐") 
             else:
                 return ("Negative", "😞")
 
@@ -429,7 +431,7 @@ def dashboard():
                 return ("N/A", "")
             if percent >= 66:
                 return ("Positive", "😊")
-            elif percent >= 33:
+            elif percent >= 45:
                 return ("Neutral", "😐")
             else:
                 return ("Negative", "😞")
@@ -977,8 +979,13 @@ def perform_local_sync():
     print(f"[SCHEDULER] Local sync complete. {processed} new calls imported.")
 
 # --- MongoDB Setup ---
-MONGO_URI = "mongodb+srv://lokesh:lokesh17@cluster0.au3rwov.mongodb.net/"
-client = MongoClient(MONGO_URI)
+MONGO_URI = ("mongodb+srv://lokesh:lokesh17@cluster0.au3rwov.mongodb.net/"
+             "?retryWrites=true&w=majority")
+client = MongoClient(
+    MONGO_URI,
+    tls=True,                  # explicit but optional; SRV implies TLS
+    tlsCAFile=certifi.where()  # <— give OpenSSL an up‑to‑date CA bundle
+)
 db = client["post_call"]
 calls_collection = db["calls"]
 
