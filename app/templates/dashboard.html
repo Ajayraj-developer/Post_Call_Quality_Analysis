@@ -254,7 +254,11 @@
     }
 
     /* Standardized heading styles */
-    h3, h4, .stacked-bar-title, .chart-title, .agent-performance-title {
+    h3,
+    h4,
+    .stacked-bar-title,
+    .chart-title,
+    .agent-performance-title {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       font-weight: 600;
       color: var(--dark);
@@ -267,7 +271,10 @@
     }
 
     /* Sub-section headings */
-    h4, .stacked-bar-title, .chart-title, .agent-performance-title {
+    h4,
+    .stacked-bar-title,
+    .chart-title,
+    .agent-performance-title {
       font-size: 20px;
       margin-bottom: 1rem;
     }
@@ -280,7 +287,8 @@
 
     /* Remove any conflicting styles */
     .agent-performance-title {
-      font-size: 20px !important; /* Override any existing styles */
+      font-size: 20px !important;
+      /* Override any existing styles */
     }
 
     .stacked-bar-title {
@@ -400,7 +408,7 @@
               </div>
               <a href="#" class="dropdown-item"><i class="fas fa-user-circle"></i>Profile</a>
               <a href="#" class="dropdown-item"><i class="fas fa-cog"></i>Settings</a>
-              <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: #dc3545;"><i
+              <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: rgba(144,202,249,1);"><i
                   class="fas fa-sign-out-alt"></i>Logout</a>
             </div>
           </div>
@@ -493,15 +501,15 @@
               </div>
               <div class="bar-chart-legend">
                 <div class="legend-item">
-                  <div class="legend-color" style="background-color: #28a745;"></div>
+                  <div class="legend-color" style="background-color: rgba(13,71,161,1);"></div>
                   <span class="legend-label">Positive</span>
                 </div>
                 <div class="legend-item">
-                  <div class="legend-color" style="background-color: #ffc107;"></div>
+                  <div class="legend-color" style="background-color: rgba(33,150,243,1);"></div>
                   <span class="legend-label">Neutral</span>
                 </div>
                 <div class="legend-item">
-                  <div class="legend-color" style="background-color: #dc3545;"></div>
+                  <div class="legend-color" style="background-color: rgba(144,202,249,1);"></div>
                   <span class="legend-label">Negative</span>
                 </div>
               </div>
@@ -523,15 +531,15 @@
               </div>
               <div class="bar-chart-legend">
                 <div class="legend-item">
-                  <div class="legend-color" style="background-color: #28a745;"></div>
+                  <div class="legend-color" style="background-color: rgba(13,71,161,1);"></div>
                   <span class="legend-label">Positive</span>
                 </div>
                 <div class="legend-item">
-                  <div class="legend-color" style="background-color: #ffc107;"></div>
+                  <div class="legend-color" style="background-color: rgba(33,150,243,1);"></div>
                   <span class="legend-label">Neutral</span>
                 </div>
                 <div class="legend-item">
-                  <div class="legend-color" style="background-color: #dc3545;"></div>
+                  <div class="legend-color" style="background-color: rgba(144,202,249,1);"></div>
                   <span class="legend-label">Negative</span>
                 </div>
               </div>
@@ -585,18 +593,15 @@
               <div class="agent-chart-legend mt-3">
                 <div class="d-flex justify-content-center gap-4">
                   <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
-                    </div>
+                    <div class="legend-color" style="background: #0d47a1;"></div>
                     <span class="legend-label">Excellent (65-100)</span>
                   </div>
                   <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
-                    </div>
+                    <div class="legend-color" style="background: #2196f3;"></div>
                     <span class="legend-label">Good (45-65)</span>
                   </div>
                   <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);">
-                    </div>
+                    <div class="legend-color" style="background: #90caf9;"></div>
                     <span class="legend-label">Needs Improvement (0-45)</span>
                   </div>
                 </div>
@@ -946,46 +951,54 @@
     function getPerformanceColor(score) {
       if (score >= 65) {
         return {
-          background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-          border: '#28a745'
+          background: 'linear-gradient(135deg, rgba(13,71,161,1) 0%, #20c997 100%)',
+          border: 'rgba(13,71,161,1)'
         };
       } else if (score >= 45) {
         return {
-          background: 'linear-gradient(135deg, #ffc107 0%, #fd7e14 100%)',
-          border: '#ffc107'
+          background: 'linear-gradient(135deg, rgba(33,150,243,1) 0%, #fd7e14 100%)',
+          border: 'rgba(33,150,243,1)'
         };
       } else {
         return {
-          background: 'linear-gradient(135deg, #dc3545 0%, #e83e8c 100%)',
-          border: '#dc3545'
+          background: 'linear-gradient(135deg, rgba(144,202,249,1) 0%, #e83e8c 100%)',
+          border: 'rgba(144,202,249,1)'
         };
       }
     }
 
-    // Get performance label
-    function getPerformanceLabel(score) {
-      if (score >= 65) return 'Excellent';
-      if (score >= 45) return 'Good';
-      return 'Needs Improvement';
+    // Create agent performance chart
+    // 1. Define blue shades for each performance category
+    const performanceBlueShades = {
+      excellent: 'rgba(13,71,161,1)',   // Deep blue
+      good: 'rgba(33,150,243,1)',  // Medium blue
+      needs: 'rgba(144,202,249,1)'  // Light blue
+    };
+
+    // 2. Function to get blue shade based on score
+    function getPerformanceBlue(score) {
+      if (score >= 65) return performanceBlueShades.excellent;
+      if (score >= 45) return performanceBlueShades.good;
+      return performanceBlueShades.needs;
     }
 
-    // Create agent performance chart
+    // 3. Update the chart creation function
     function createAgentPerformanceChart() {
       const ctx = document.getElementById('agentPerformanceChart').getContext('2d');
-      // Calculate all agent data
       allAgentData = calculateAgentPerformance();
-      // Get current page data
       const startIndex = (currentAgentPage - 1) * agentsPerPage;
       const endIndex = startIndex + agentsPerPage;
       const currentPageData = allAgentData.slice(startIndex, endIndex);
-      // Destroy existing chart
+
+      // Destroy existing chart if any
       if (agentPerformanceChart instanceof Chart) {
         agentPerformanceChart.destroy();
       }
-      // Prepare data for chart
+
       const labels = currentPageData.map(agent => agent.name);
       const scores = currentPageData.map(agent => agent.averageScore);
-      const colors = currentPageData.map(agent => getPerformanceColor(agent.averageScore));
+      const colors = currentPageData.map(agent => getPerformanceBlue(agent.averageScore));
+
       agentPerformanceChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -993,8 +1006,8 @@
           datasets: [{
             label: 'Average Performance Score',
             data: scores,
-            backgroundColor: colors.map(c => c.background),
-            borderColor: colors.map(c => c.border),
+            backgroundColor: colors,
+            borderColor: colors,
             borderWidth: 2,
             borderRadius: 8,
             borderSkipped: false,
@@ -1005,9 +1018,7 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: {
-              display: false
-            },
+            legend: { display: false },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
               titleColor: '#fff',
@@ -1020,46 +1031,37 @@
                   const agentData = currentPageData[context.dataIndex];
                   return [
                     `Average Score: ${agentData.averageScore}%`,
-                    `Total Calls: ${agentData.callCount}`,
-                    `Performance: ${getPerformanceLabel(agentData.averageScore)}`
+                    `Total Calls: ${agentData.callCount}`
                   ];
                 }
               }
+            }
+          },
+          // 4. Add click-to-filter functionality
+          onClick: function (evt, elements) {
+            if (elements.length > 0) {
+              const index = elements[0].index;
+              const agentName = labels[index];
+              document.getElementById('agentSearchInput').value = agentName;
+              currentCallPage = 1;
+              updateCallListPagination();
+              document.getElementById('callListTable').scrollIntoView({ behavior: 'smooth' });
             }
           },
           scales: {
             x: {
               beginAtZero: true,
               max: 100,
-              grid: {
-                display: true,
-                color: 'rgba(0, 0, 0, 0.05)'
-              },
-              ticks: {
-                callback: function (value) {
-                  return value + '%';
-                }
-              }
+              grid: { display: true, color: 'rgba(0, 0, 0, 0.05)' },
+              ticks: { callback: function (value) { return value + '%'; } }
             },
             y: {
-              grid: {
-                display: false
-              },
-              ticks: {
-                font: {
-                  size: 12,
-                  weight: 'bold'
-                }
-              }
+              grid: { display: false },
+              ticks: { font: { size: 12, weight: 'bold' } }
             }
           },
           layout: {
-            padding: {
-              top: 20,
-              right: 20,
-              bottom: 20,
-              left: 20
-            }
+            padding: { top: 20, right: 20, bottom: 20, left: 20 }
           },
           barThickness: 30,
           categoryPercentage: 0.8,
@@ -1223,7 +1225,7 @@
           labels: ['High (≥6.6)', 'Medium (4.5-6.5)', 'Low (<4.5)'],
           datasets: [{
             data: [stats.positive, stats.neutral, stats.negative],
-            backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+            backgroundColor: ['rgba(13,71,161,1)', 'rgba(33,150,243,1)', 'rgba(144,202,249,1)'],
             borderWidth: 0,
             cutout: '70%'
           }]
@@ -1263,22 +1265,22 @@
             {
               label: 'Positive',
               data: data.map(d => d.positive),
-              backgroundColor: '#28a745',
-              borderColor: '#28a745',
+              backgroundColor: 'rgba(13,71,161,1)',
+              borderColor: 'rgba(13,71,161,1)',
               borderWidth: 1
             },
             {
               label: 'Neutral',
               data: data.map(d => d.neutral),
-              backgroundColor: '#ffc107',
-              borderColor: '#ffc107',
+              backgroundColor: 'rgba(33,150,243,1)',
+              borderColor: 'rgba(33,150,243,1)',
               borderWidth: 1
             },
             {
               label: 'Negative',
               data: data.map(d => d.negative),
-              backgroundColor: '#dc3545',
-              borderColor: '#dc3545',
+              backgroundColor: 'rgba(144,202,249,1)',
+              borderColor: 'rgba(144,202,249,1)',
               borderWidth: 1
             }
           ]
@@ -1358,7 +1360,7 @@
             {
               label: 'Positive',
               data: data.map(d => d.positive.percentage),
-              backgroundColor: '#28a745',
+              backgroundColor: 'rgba(13,71,161,1)',
               borderWidth: 0,
               borderRadius: function (context) {
                 return getBorderRadius(0, context.dataIndex);
@@ -1368,7 +1370,7 @@
             {
               label: 'Neutral',
               data: data.map(d => d.neutral.percentage),
-              backgroundColor: '#ffc107',
+              backgroundColor: 'rgba(33,150,243,1)',
               borderWidth: 0,
               borderRadius: function (context) {
                 return getBorderRadius(1, context.dataIndex);
@@ -1378,7 +1380,7 @@
             {
               label: 'Negative',
               data: data.map(d => d.negative.percentage),
-              backgroundColor: '#dc3545',
+              backgroundColor: 'rgba(144,202,249,1)',
               borderWidth: 0,
               borderRadius: function (context) {
                 return getBorderRadius(2, context.dataIndex);
@@ -1452,219 +1454,219 @@
 
     // Create performance radar chart
     function createPerformanceRadarChart() {
-  const ctx = document.getElementById('performanceRadarChart').getContext('2d');
+      const ctx = document.getElementById('performanceRadarChart').getContext('2d');
 
-  // Generate last 7 days as labels
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-  }
+      // Generate last 7 days as labels
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      }
 
-  // Helper to filter calls for a given day
-  function filterByDay(dateObj) {
-    return callListData.filter(call => {
-      const callDate = new Date(call.timestamp);
-      return callDate.toDateString() === dateObj.toDateString();
-    });
-  }
+      // Helper to filter calls for a given day
+      function filterByDay(dateObj) {
+        return callListData.filter(call => {
+          const callDate = new Date(call.timestamp);
+          return callDate.toDateString() === dateObj.toDateString();
+        });
+      }
 
-  // Prepare data for each metric
-  const overallScores = [];
-  const positiveRatios = [];
-  const callVolumes = [];
-  const satisfactionScores = [];
-  const agentPerformances = [];
+      // Prepare data for each metric
+      const overallScores = [];
+      const positiveRatios = [];
+      const callVolumes = [];
+      const satisfactionScores = [];
+      const agentPerformances = [];
 
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const calls = filterByDay(d);
-    const callCount = calls.length;
-    // Overall Score
-    const avgScore = callCount
-      ? Math.round((calls.reduce((sum, c) => sum + (parseFloat(c.overall_score) || 0), 0) / callCount) * 10)
-      : 0;
-    overallScores.push(avgScore);
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const calls = filterByDay(d);
+        const callCount = calls.length;
+        // Overall Score
+        const avgScore = callCount
+          ? Math.round((calls.reduce((sum, c) => sum + (parseFloat(c.overall_score) || 0), 0) / callCount) * 10)
+          : 0;
+        overallScores.push(avgScore);
 
-    // Positive Ratio
-    const positiveCount = calls.filter(c => (parseFloat(c.overall_score) || 0) >= 6.6).length;
-    positiveRatios.push(callCount ? Math.round((positiveCount / callCount) * 100) : 0);
+        // Positive Ratio
+        const positiveCount = calls.filter(c => (parseFloat(c.overall_score) || 0) >= 6.6).length;
+        positiveRatios.push(callCount ? Math.round((positiveCount / callCount) * 100) : 0);
 
-    // Call Volume
-    callVolumes.push(callCount);
+        // Call Volume
+        callVolumes.push(callCount);
 
-    // Customer Satisfaction (reuse avgScore)
-    satisfactionScores.push(avgScore);
+        // Customer Satisfaction (reuse avgScore)
+        satisfactionScores.push(avgScore);
 
-    // Agent Performance (average of agent averages for the day)
-    const agentScores = {};
-    calls.forEach(call => {
-      if (!agentScores[call.agent_name]) agentScores[call.agent_name] = { total: 0, count: 0 };
-      agentScores[call.agent_name].total += parseFloat(call.overall_score) || 0;
-      agentScores[call.agent_name].count++;
-    });
-    const agentAvgScores = Object.values(agentScores).map(
-      agent => (agent.total / agent.count) * 10
-    );
-    agentPerformances.push(agentAvgScores.length
-      ? Math.round(agentAvgScores.reduce((a, b) => a + b) / agentAvgScores.length)
-      : 0);
-  }
+        // Agent Performance (average of agent averages for the day)
+        const agentScores = {};
+        calls.forEach(call => {
+          if (!agentScores[call.agent_name]) agentScores[call.agent_name] = { total: 0, count: 0 };
+          agentScores[call.agent_name].total += parseFloat(call.overall_score) || 0;
+          agentScores[call.agent_name].count++;
+        });
+        const agentAvgScores = Object.values(agentScores).map(
+          agent => (agent.total / agent.count) * 10
+        );
+        agentPerformances.push(agentAvgScores.length
+          ? Math.round(agentAvgScores.reduce((a, b) => a + b) / agentAvgScores.length)
+          : 0);
+      }
 
-  // Destroy previous chart if exists
-  if (window.performanceLineChart) window.performanceLineChart.destroy();
+      // Destroy previous chart if exists
+      if (window.performanceLineChart) window.performanceLineChart.destroy();
 
-  // Blue color palette
-  const bluePalette = [
-    'rgba(13, 71, 161, 1)',
-    'rgba(21, 101, 192, 1)',
-    'rgba(33, 150, 243, 1)',
-    'rgba(2, 136, 209, 1)',
-    'rgba(41, 121, 255, 1)'
-  ];
-  const blueFills = [
-    'rgba(13, 71, 161, 0.15)',
-    'rgba(21, 101, 192, 0.12)',
-    'rgba(33, 150, 243, 0.10)',
-    'rgba(2, 136, 209, 0.10)',
-    'rgba(41, 121, 255, 0.08)'
-  ];
+      // Blue color palette
+      const bluePalette = [
+        'rgba(13, 71, 161, 1)',
+        'rgba(21, 101, 192, 1)',
+        'rgba(33, 150, 243, 1)',
+        'rgba(2, 136, 209, 1)',
+        'rgba(41, 121, 255, 1)'
+      ];
+      const blueFills = [
+        'rgba(13, 71, 161, 0.15)',
+        'rgba(21, 101, 192, 0.12)',
+        'rgba(33, 150, 243, 0.10)',
+        'rgba(2, 136, 209, 0.10)',
+        'rgba(41, 121, 255, 0.08)'
+      ];
 
-  window.performanceLineChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: days,
-      datasets: [
-        {
-          label: 'Overall Score',
-          data: overallScores,
-          borderColor: bluePalette[0],
-          backgroundColor: blueFills[0],
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointBackgroundColor: bluePalette[0],
-          borderWidth: 2,
-          order: 1
+      window.performanceLineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: days,
+          datasets: [
+            {
+              label: 'Overall Score',
+              data: overallScores,
+              borderColor: bluePalette[0],
+              backgroundColor: blueFills[0],
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3,
+              pointBackgroundColor: bluePalette[0],
+              borderWidth: 2,
+              order: 1
+            },
+            {
+              label: 'Positive Ratio',
+              data: positiveRatios,
+              borderColor: bluePalette[1],
+              backgroundColor: blueFills[1],
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3,
+              pointBackgroundColor: bluePalette[1],
+              borderWidth: 2,
+              order: 2
+            },
+            {
+              label: 'Call Volume',
+              data: callVolumes,
+              borderColor: bluePalette[2],
+              backgroundColor: blueFills[2],
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3,
+              pointBackgroundColor: bluePalette[2],
+              borderWidth: 2,
+              yAxisID: 'y2',
+              order: 3
+            },
+            {
+              label: 'Customer Satisfaction',
+              data: satisfactionScores,
+              borderColor: bluePalette[3],
+              backgroundColor: blueFills[3],
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3,
+              pointBackgroundColor: bluePalette[3],
+              borderWidth: 2,
+              order: 4
+            },
+            {
+              label: 'Agent Performance',
+              data: agentPerformances,
+              borderColor: bluePalette[4],
+              backgroundColor: blueFills[4],
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3,
+              pointBackgroundColor: bluePalette[4],
+              borderWidth: 2,
+              order: 5
+            }
+          ]
         },
-        {
-          label: 'Positive Ratio',
-          data: positiveRatios,
-          borderColor: bluePalette[1],
-          backgroundColor: blueFills[1],
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointBackgroundColor: bluePalette[1],
-          borderWidth: 2,
-          order: 2
-        },
-        {
-          label: 'Call Volume',
-          data: callVolumes,
-          borderColor: bluePalette[2],
-          backgroundColor: blueFills[2],
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointBackgroundColor: bluePalette[2],
-          borderWidth: 2,
-          yAxisID: 'y2',
-          order: 3
-        },
-        {
-          label: 'Customer Satisfaction',
-          data: satisfactionScores,
-          borderColor: bluePalette[3],
-          backgroundColor: blueFills[3],
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointBackgroundColor: bluePalette[3],
-          borderWidth: 2,
-          order: 4
-        },
-        {
-          label: 'Agent Performance',
-          data: agentPerformances,
-          borderColor: bluePalette[4],
-          backgroundColor: blueFills[4],
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointBackgroundColor: bluePalette[4],
-          borderWidth: 2,
-          order: 5
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: {
-            color: '#0d47a1',
-            font: { size: 14, weight: 'bold' }
-          }
-        },
-        tooltip: {
-          mode: 'index',
-          intersect: false,
-          backgroundColor: 'rgba(13, 71, 161, 0.95)',
-          titleColor: '#fff',
-          bodyColor: '#fff',
-          borderColor: '#fff',
-          borderWidth: 1,
-          cornerRadius: 8,
-          callbacks: {
-            label: function(context) {
-              let label = context.dataset.label || '';
-              let value = context.parsed.y;
-              if (label === 'Call Volume') return `${label}: ${value} calls`;
-              return `${label}: ${value}%`;
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                color: '#0d47a1',
+                font: { size: 14, weight: 'bold' }
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(13, 71, 161, 0.95)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: '#fff',
+              borderWidth: 1,
+              cornerRadius: 8,
+              callbacks: {
+                label: function (context) {
+                  let label = context.dataset.label || '';
+                  let value = context.parsed.y;
+                  if (label === 'Call Volume') return `${label}: ${value} calls`;
+                  return `${label}: ${value}%`;
+                }
+              }
+            }
+          },
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+          },
+          scales: {
+            y: {
+              type: 'linear',
+              position: 'left',
+              min: 0,
+              max: 100,
+              grid: { color: 'rgba(13,71,161,0.08)' },
+              title: { display: true, text: 'Percentage', color: '#0d47a1' },
+              ticks: { color: '#0d47a1', callback: val => val + '%' }
+            },
+            y2: {
+              type: 'linear',
+              position: 'right',
+              min: 0,
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: 'Call Volume', color: bluePalette[2] },
+              ticks: { color: bluePalette[2] }
+            },
+            x: {
+              grid: { color: 'rgba(13,71,161,0.05)' },
+              ticks: { color: '#0d47a1' }
             }
           }
         }
-      },
-      interaction: {
-        mode: 'nearest',
-        axis: 'x',
-        intersect: false
-      },
-      scales: {
-        y: {
-          type: 'linear',
-          position: 'left',
-          min: 0,
-          max: 100,
-          grid: { color: 'rgba(13,71,161,0.08)' },
-          title: { display: true, text: 'Percentage', color: '#0d47a1' },
-          ticks: { color: '#0d47a1', callback: val => val + '%' }
-        },
-        y2: {
-          type: 'linear',
-          position: 'right',
-          min: 0,
-          grid: { drawOnChartArea: false },
-          title: { display: true, text: 'Call Volume', color: bluePalette[2] },
-          ticks: { color: bluePalette[2] }
-        },
-        x: {
-          grid: { color: 'rgba(13,71,161,0.05)' },
-          ticks: { color: '#0d47a1' }
-        }
-      }
+      });
     }
-  });
-}
-    
-    
-  // Helper functions for additional metrics
+
+
+    // Helper functions for additional metrics
     // function calculateResolutionRate(filterFunction) {
     //   const filteredCalls = callListData.filter(call => filterFunction(call.timestamp));
     //   const resolved = filteredCalls.filter(call => call.resolved === 'yes').length;
@@ -1680,7 +1682,7 @@
     function calculateAgentScore(filterFunction) {
       const filteredCalls = callListData.filter(call => filterFunction(call.timestamp));
       const agentScores = {};
-      
+
       filteredCalls.forEach(call => {
         if (!agentScores[call.agent_name]) {
           agentScores[call.agent_name] = {
@@ -1695,8 +1697,8 @@
       const averageScores = Object.values(agentScores).map(
         agent => (agent.total / agent.count) * 10
       );
-      
-      return averageScores.length ? 
+
+      return averageScores.length ?
         averageScores.reduce((a, b) => a + b) / averageScores.length : 0;
     }
 
