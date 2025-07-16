@@ -286,6 +286,72 @@
     .stacked-bar-title {
       font-size: 20px !important;
     }
+
+    /* Metric Card Styles */
+    .metric-card {
+      transition: .5s;
+      border: 1px solid rgba(0, 0, 0, .125);
+    }
+
+    .metric-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .metric-card i {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .metric-card h6 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .metric-card p {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    /* Performance Chart Styles */
+    .performance-chart-container {
+      background: #fff;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+      transition: transform 0.3s ease;
+    }
+
+    .performance-chart-container:hover {
+      transform: translateY(-5px);
+    }
+
+    .chart-header {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      padding-bottom: 15px;
+    }
+
+    .chart-legend .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-legend .legend-color {
+      width: 30px;
+      height: 6px;
+      border-radius: 3px;
+    }
+
+    .chart-wrapper {
+      height: 400px;
+      position: relative;
+      margin: 20px 0;
+    }
   </style>
 </head>
 
@@ -340,65 +406,72 @@
           </div>
         </div>
       </nav>
-      <!-- Dashboard Section -->
+      <!-- Metric Cards Section -->
       <div class="container-fluid pt-4 px-4">
-        <h3 class="mb-4">Performance Overview</h3>
+        <!-- Metric Cards Row -->
+        <div class="row g-4 mb-4">
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card bg-light rounded d-flex align-items-center justify-content-between p-4">
+              <div class="ms-3">
+                <p class="mb-2 text-secondary">Total Calls</p>
+                <h6 class="mb-0" id="totalCallsMetric">0</h6>
+              </div>
+              <i class="fa fa-chart-line fa-3x text-primary"></i>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card bg-light rounded d-flex align-items-center justify-content-between p-4">
+              <div class="ms-3">
+                <p class="mb-2 text-secondary">Total Call Time</p>
+                <h6 class="mb-0" id="totalCallTimeMetric">0 hrs</h6>
+              </div>
+              <i class="fa fa-chart-bar fa-3x text-primary"></i>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card bg-light rounded d-flex align-items-center justify-content-between p-4">
+              <div class="ms-3">
+                <p class="mb-2 text-secondary">Agent Count</p>
+                <h6 class="mb-0" id="agentCountMetric">0</h6>
+              </div>
+              <i class="fa fa-chart-area fa-3x text-primary"></i>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card bg-light rounded d-flex align-items-center justify-content-between p-4">
+              <div class="ms-3">
+                <p class="mb-2 text-secondary">Overall Score</p>
+                <h6 class="mb-0" id="overallScoreMetric">0%</h6>
+              </div>
+              <i class="fa fa-chart-pie fa-3x text-primary"></i>
+            </div>
+          </div>
+        </div>
+        <!-- Dashboard Section -->
+        <!-- <h3 class="mb-4">Performance Overview</h3> -->
         <!-- Pie Charts Row -->
         <div class="row mb-4">
-          <div class="col-md-4">
-            <div class="pie-chart-container">
-              <div class="chart-title">Today</div>
+          <div class="col-12">
+            <div class="performance-chart-container">
+              <div class="chart-header d-flex justify-content-between align-items-center mb-3">
+                <h4 class="chart-title mb-0">Performance Metrics Timeline</h4>
+                <!-- <div class="chart-legend d-flex gap-3">
+                  <div class="legend-item">
+                    <span class="legend-color" style="background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);"></span>
+                    <span class="legend-label">Today</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-color" style="background: linear-gradient(135deg, #1565c0 0%, #42a5f5 100%);"></span>
+                    <span class="legend-label">This Week</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-color" style="background: linear-gradient(135deg, #0288d1 0%, #81d4fa 100%);"></span>
+                    <span class="legend-label">This Quarter</span>
+                  </div>
+                </div> -->
+              </div>
               <div class="chart-wrapper">
-                <canvas id="todayChart"></canvas>
-                <div class="chart-score" id="todayScore">0%<span class="score-label">Overall Average</span></div>
-              </div>
-              <div class="chart-stats">
-                <div class="stat-item">
-                  <div class="stat-value" id="todayCalls">0</div>
-                  <div class="stat-label">Calls</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-value" id="todayPositive">0%</div>
-                  <div class="stat-label">Positive</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="pie-chart-container">
-              <div class="chart-title">Current Week</div>
-              <div class="chart-wrapper">
-                <canvas id="weekChart"></canvas>
-                <div class="chart-score" id="weekScore">0%<span class="score-label">Overall Average</span></div>
-              </div>
-              <div class="chart-stats">
-                <div class="stat-item">
-                  <div class="stat-value" id="weekCalls">0</div>
-                  <div class="stat-label">Calls</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-value" id="weekPositive">0%</div>
-                  <div class="stat-label">Positive</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="pie-chart-container">
-              <div class="chart-title">Current Quarter</div>
-              <div class="chart-wrapper">
-                <canvas id="quarterChart"></canvas>
-                <div class="chart-score" id="quarterScore">0%<span class="score-label">Overall Average</span></div>
-              </div>
-              <div class="chart-stats">
-                <div class="stat-item">
-                  <div class="stat-value" id="quarterCalls">0</div>
-                  <div class="stat-label">Calls</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-value" id="quarterPositive">0%</div>
-                  <div class="stat-label">Positive</div>
-                </div>
+                <canvas id="performanceRadarChart"></canvas>
               </div>
             </div>
           </div>
@@ -1377,36 +1450,285 @@
       });
     }
 
+    // Create performance radar chart
+    function createPerformanceRadarChart() {
+  const ctx = document.getElementById('performanceRadarChart').getContext('2d');
+
+  // Generate last 7 days as labels
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+  }
+
+  // Helper to filter calls for a given day
+  function filterByDay(dateObj) {
+    return callListData.filter(call => {
+      const callDate = new Date(call.timestamp);
+      return callDate.toDateString() === dateObj.toDateString();
+    });
+  }
+
+  // Prepare data for each metric
+  const overallScores = [];
+  const positiveRatios = [];
+  const callVolumes = [];
+  const satisfactionScores = [];
+  const agentPerformances = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const calls = filterByDay(d);
+    const callCount = calls.length;
+    // Overall Score
+    const avgScore = callCount
+      ? Math.round((calls.reduce((sum, c) => sum + (parseFloat(c.overall_score) || 0), 0) / callCount) * 10)
+      : 0;
+    overallScores.push(avgScore);
+
+    // Positive Ratio
+    const positiveCount = calls.filter(c => (parseFloat(c.overall_score) || 0) >= 6.6).length;
+    positiveRatios.push(callCount ? Math.round((positiveCount / callCount) * 100) : 0);
+
+    // Call Volume
+    callVolumes.push(callCount);
+
+    // Customer Satisfaction (reuse avgScore)
+    satisfactionScores.push(avgScore);
+
+    // Agent Performance (average of agent averages for the day)
+    const agentScores = {};
+    calls.forEach(call => {
+      if (!agentScores[call.agent_name]) agentScores[call.agent_name] = { total: 0, count: 0 };
+      agentScores[call.agent_name].total += parseFloat(call.overall_score) || 0;
+      agentScores[call.agent_name].count++;
+    });
+    const agentAvgScores = Object.values(agentScores).map(
+      agent => (agent.total / agent.count) * 10
+    );
+    agentPerformances.push(agentAvgScores.length
+      ? Math.round(agentAvgScores.reduce((a, b) => a + b) / agentAvgScores.length)
+      : 0);
+  }
+
+  // Destroy previous chart if exists
+  if (window.performanceLineChart) window.performanceLineChart.destroy();
+
+  // Blue color palette
+  const bluePalette = [
+    'rgba(13, 71, 161, 1)',
+    'rgba(21, 101, 192, 1)',
+    'rgba(33, 150, 243, 1)',
+    'rgba(2, 136, 209, 1)',
+    'rgba(41, 121, 255, 1)'
+  ];
+  const blueFills = [
+    'rgba(13, 71, 161, 0.15)',
+    'rgba(21, 101, 192, 0.12)',
+    'rgba(33, 150, 243, 0.10)',
+    'rgba(2, 136, 209, 0.10)',
+    'rgba(41, 121, 255, 0.08)'
+  ];
+
+  window.performanceLineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [
+        {
+          label: 'Overall Score',
+          data: overallScores,
+          borderColor: bluePalette[0],
+          backgroundColor: blueFills[0],
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointBackgroundColor: bluePalette[0],
+          borderWidth: 2,
+          order: 1
+        },
+        {
+          label: 'Positive Ratio',
+          data: positiveRatios,
+          borderColor: bluePalette[1],
+          backgroundColor: blueFills[1],
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointBackgroundColor: bluePalette[1],
+          borderWidth: 2,
+          order: 2
+        },
+        {
+          label: 'Call Volume',
+          data: callVolumes,
+          borderColor: bluePalette[2],
+          backgroundColor: blueFills[2],
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointBackgroundColor: bluePalette[2],
+          borderWidth: 2,
+          yAxisID: 'y2',
+          order: 3
+        },
+        {
+          label: 'Customer Satisfaction',
+          data: satisfactionScores,
+          borderColor: bluePalette[3],
+          backgroundColor: blueFills[3],
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointBackgroundColor: bluePalette[3],
+          borderWidth: 2,
+          order: 4
+        },
+        {
+          label: 'Agent Performance',
+          data: agentPerformances,
+          borderColor: bluePalette[4],
+          backgroundColor: blueFills[4],
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointBackgroundColor: bluePalette[4],
+          borderWidth: 2,
+          order: 5
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            color: '#0d47a1',
+            font: { size: 14, weight: 'bold' }
+          }
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(13, 71, 161, 0.95)',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: '#fff',
+          borderWidth: 1,
+          cornerRadius: 8,
+          callbacks: {
+            label: function(context) {
+              let label = context.dataset.label || '';
+              let value = context.parsed.y;
+              if (label === 'Call Volume') return `${label}: ${value} calls`;
+              return `${label}: ${value}%`;
+            }
+          }
+        }
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      },
+      scales: {
+        y: {
+          type: 'linear',
+          position: 'left',
+          min: 0,
+          max: 100,
+          grid: { color: 'rgba(13,71,161,0.08)' },
+          title: { display: true, text: 'Percentage', color: '#0d47a1' },
+          ticks: { color: '#0d47a1', callback: val => val + '%' }
+        },
+        y2: {
+          type: 'linear',
+          position: 'right',
+          min: 0,
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: 'Call Volume', color: bluePalette[2] },
+          ticks: { color: bluePalette[2] }
+        },
+        x: {
+          grid: { color: 'rgba(13,71,161,0.05)' },
+          ticks: { color: '#0d47a1' }
+        }
+      }
+    }
+  });
+}
+    
+    
+  // Helper functions for additional metrics
+    // function calculateResolutionRate(filterFunction) {
+    //   const filteredCalls = callListData.filter(call => filterFunction(call.timestamp));
+    //   const resolved = filteredCalls.filter(call => call.resolved === 'yes').length;
+    //   return filteredCalls.length ? (resolved / filteredCalls.length) * 100 : 0;
+    // }
+
+    function calculateSatisfaction(filterFunction) {
+      const filteredCalls = callListData.filter(call => filterFunction(call.timestamp));
+      const totalScore = filteredCalls.reduce((sum, call) => sum + (parseFloat(call.overall_score) || 0), 0);
+      return filteredCalls.length ? (totalScore / filteredCalls.length) * 10 : 0;
+    }
+
+    function calculateAgentScore(filterFunction) {
+      const filteredCalls = callListData.filter(call => filterFunction(call.timestamp));
+      const agentScores = {};
+      
+      filteredCalls.forEach(call => {
+        if (!agentScores[call.agent_name]) {
+          agentScores[call.agent_name] = {
+            total: 0,
+            count: 0
+          };
+        }
+        agentScores[call.agent_name].total += parseFloat(call.overall_score) || 0;
+        agentScores[call.agent_name].count++;
+      });
+
+      const averageScores = Object.values(agentScores).map(
+        agent => (agent.total / agent.count) * 10
+      );
+      
+      return averageScores.length ? 
+        averageScores.reduce((a, b) => a + b) / averageScores.length : 0;
+    }
+
     // Initialize all charts
     function initializeCharts() {
-      const todayStats = calculateStats(isToday);
-      const weekStats = calculateStats(isThisWeek);
-      const quarterStats = calculateStats(isThisQuarter);
-
-      // Update chart scores and stats
-      document.getElementById('todayScore').innerHTML = todayStats.avgScore + '%<span class="score-label">Overall Average</span>';
-      document.getElementById('todayCalls').textContent = todayStats.callCount;
-      document.getElementById('todayPositive').textContent = todayStats.positive + '%';
-
-      document.getElementById('weekScore').innerHTML = weekStats.avgScore + '%<span class="score-label">Overall Average</span>';
-      document.getElementById('weekCalls').textContent = weekStats.callCount;
-      document.getElementById('weekPositive').textContent = weekStats.positive + '%';
-
-      document.getElementById('quarterScore').innerHTML = quarterStats.avgScore + '%<span class="score-label">Overall Average</span>';
-      document.getElementById('quarterCalls').textContent = quarterStats.callCount;
-      document.getElementById('quarterPositive').textContent = quarterStats.positive + '%';
-
-      // Create pie charts
-      createPieChart('todayChart', todayStats);
-      createPieChart('weekChart', weekStats);
-      createPieChart('quarterChart', quarterStats);
-      // Create stacked bar chart
+      createPerformanceRadarChart();
       createStackedBarChart('hourly');
-
-      // Create department chart
       createDepartmentChart();
-      // Create agent performance chart
       createAgentPerformanceChart();
+    }
+
+    // Update metric cards
+    function updateMetricCards() {
+      // Calculate total calls
+      const totalCalls = callListData.length;
+      document.getElementById('totalCallsMetric').textContent = totalCalls.toLocaleString();
+
+      // Calculate total call time
+      const totalSeconds = callListData.reduce((sum, call) => sum + (call.duration || 0), 0);
+      const totalHours = Math.round(totalSeconds / 3600);
+      document.getElementById('totalCallTimeMetric').textContent = `${totalHours} hrs`;
+
+      // Calculate unique agent count
+      const uniqueAgents = new Set(callListData.map(call => call.agent_name)).size;
+      document.getElementById('agentCountMetric').textContent = uniqueAgents;
+
+      // Calculate overall average score
+      const totalScore = callListData.reduce((sum, call) => {
+        return sum + (parseFloat(call.overall_score) || 0);
+      }, 0);
+      const averageScore = Math.round((totalScore / totalCalls) * 10);
+      document.getElementById('overallScoreMetric').textContent = `${averageScore}%`;
     }
 
     // Call List Pagination Functions
@@ -1493,6 +1815,9 @@
 
       // Initialize all charts
       initializeCharts();
+
+      // Update metric cards
+      updateMetricCards();
 
       // Initialize call list pagination
       updateCallListPagination();
