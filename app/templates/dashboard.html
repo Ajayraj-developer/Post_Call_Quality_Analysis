@@ -1413,7 +1413,7 @@
                   ];
                 }
               }
-            }
+            },
           },
           scales: {
             x: {
@@ -1475,14 +1475,15 @@
       const overallScores = [];
       const positiveRatios = [];
       const callVolumes = [];
-      const satisfactionScores = [];
-      const agentPerformances = [];
+      const avgDurations = [];
+      const resolutionRates = [];
 
       for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         const calls = filterByDay(d);
         const callCount = calls.length;
+
         // Overall Score
         const avgScore = callCount
           ? Math.round((calls.reduce((sum, c) => sum + (parseFloat(c.overall_score) || 0), 0) / callCount) * 10)
@@ -1496,22 +1497,16 @@
         // Call Volume
         callVolumes.push(callCount);
 
-        // Customer Satisfaction (reuse avgScore)
-        satisfactionScores.push(avgScore);
+        // Average Duration (in minutes)
+        const avgDuration = callCount
+          ? Math.round(calls.reduce((sum, c) => sum + (parseInt(c.duration) || 0), 0) / callCount / 60)
+          : 0;
+        avgDurations.push(avgDuration);
 
-        // Agent Performance (average of agent averages for the day)
-        const agentScores = {};
-        calls.forEach(call => {
-          if (!agentScores[call.agent_name]) agentScores[call.agent_name] = { total: 0, count: 0 };
-          agentScores[call.agent_name].total += parseFloat(call.overall_score) || 0;
-          agentScores[call.agent_name].count++;
-        });
-        const agentAvgScores = Object.values(agentScores).map(
-          agent => (agent.total / agent.count) * 10
-        );
-        agentPerformances.push(agentAvgScores.length
-          ? Math.round(agentAvgScores.reduce((a, b) => a + b) / agentAvgScores.length)
-          : 0);
+        // Resolution Rate - Fixed calculation
+        const resolvedCount = calls.filter(c => c.resolved.toLowerCase() === 'yes').length;
+        const resolutionRate = callCount > 0 ? Math.round((resolvedCount / callCount) * 100) : 0;
+        resolutionRates.push(resolutionRate);
       }
 
       // Destroy previous chart if exists
@@ -1576,8 +1571,8 @@
               order: 3
             },
             {
-              label: 'Customer Satisfaction',
-              data: satisfactionScores,
+              label: 'Avg Duration (min)',
+              data: avgDurations,
               borderColor: bluePalette[3],
               backgroundColor: blueFills[3],
               fill: true,
@@ -1585,11 +1580,12 @@
               pointRadius: 3,
               pointBackgroundColor: bluePalette[3],
               borderWidth: 2,
+              yAxisID: 'y3',
               order: 4
             },
             {
-              label: 'Agent Performance',
-              data: agentPerformances,
+              label: 'Resolution Rate',
+              data: resolutionRates,
               borderColor: bluePalette[4],
               backgroundColor: blueFills[4],
               fill: true,
@@ -1627,6 +1623,7 @@
                   let label = context.dataset.label || '';
                   let value = context.parsed.y;
                   if (label === 'Call Volume') return `${label}: ${value} calls`;
+                  if (label === 'Avg Duration (min)') return `${label}: ${value} minutes`;
                   return `${label}: ${value}%`;
                 }
               }
@@ -1654,6 +1651,14 @@
               grid: { drawOnChartArea: false },
               title: { display: true, text: 'Call Volume', color: bluePalette[2] },
               ticks: { color: bluePalette[2] }
+            },
+            y3: {
+              type: 'linear',
+              position: 'right',
+              min: 0,
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: 'Duration (min)', color: bluePalette[3] },
+              ticks: { color: bluePalette[3] }
             },
             x: {
               grid: { color: 'rgba(13,71,161,0.05)' },
