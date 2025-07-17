@@ -189,14 +189,14 @@
   <!-- Sidebar -->
   <div class="sidebar pe-4 pb-3">
     <nav class="navbar bg-light navbar-light">
-      <a href="../dashmin/index.html" class="navbar-brand mx-4 mb-3 d-flex align-items-center" >
+      <a href="{{ url_for('dashboard') }}" class="navbar-brand mx-4 mb-3 d-flex align-items-center" >
           <img src="../static/img/logoo.png" alt="Post Call Logo" style="height: 40px; width: auto; margin-right: 10px;border-radius: 60px;margin-left: -10px;" >
 
       <h3 class="mb-0" style="font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; color: #333;margin-top: 5px; font-size: 35px;">EchoVerge</h3>
       </a>
       <div class="navbar-nav w-100">
-        <a href="{{ url_for('upload_audio') }}" class="nav-item nav-link active"><i class="fa fa-upload me-2"></i>Upload</a>
         <a href="{{ url_for('dashboard') }}" class="nav-item nav-link"><i class="fa fa-list me-2"></i>Dashboard</a>
+        <a href="{{ url_for('upload_audio') }}" class="nav-item nav-link active"><i class="fa fa-upload me-2"></i>Upload</a>
         <a href="../dashmin/form.html" class="nav-item nav-link"><i class="far fa-file-alt me-2"></i>FAQs</a>
         <a href="#" class="nav-item nav-link"><i class="fa fa-cog me-2"></i>Settings</a>
       </div>
@@ -240,87 +240,91 @@
     </nav>
 
     <!-- Upload Section -->
-    <div class="container-fluid pt-4 px-4" >
-      <h3>Upload Call Data</h3>
-      <div class="card mb-4">
-        <div class="card-body text-center" style="height: 300pxpx;background-color: #ffffff;border-radius: 10px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);border: 1px solid #e5e7eb;  " >
-          <form method="POST" action="{{ url_for('upload_audio') }}" enctype="multipart/form-data" id="uploadForm">
-            <div id="uploadBox" style="margin-top: 20px; background-color: rgb(241, 237, 237); padding: 20px; border-radius: 10px; border: 2px dashed #ccc; text-align: center; transition: 0.3s;border-radius: 12px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);border: 1px solid #e5e7eb;">
-                <div style="font-size: 14px; color: #888;">
+    <div class="container-fluid pt-4 px-4">
+      <div class="row" style="height: 520px; min-height: 350px;">
+        <!-- Left: Upload Section -->
+        <div class="col-md-6 d-flex align-items-stretch">
+          <div class="card mb-4 w-100 d-flex flex-column justify-content-between" style="height: 95%; min-height: 320px;">
+            <div class="card-body text-center d-flex flex-column justify-content-center" style="background-color: #ffffff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; height: 95%; min-height: 300px;">
+              <h3>Upload Call Data</h3>
+              <form method="POST" action="{{ url_for('upload_audio') }}" enctype="multipart/form-data" id="uploadForm">
+                <div id="uploadBox" style="margin-top: 20px; background-color: rgb(241, 237, 237); padding: 20px; border-radius: 10px; border: 2px dashed #ccc; text-align: center; transition: 0.3s; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb;">
+                  <div style="font-size: 14px; color: #888;">
                     <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                     <h5><strong>Upload Transcript File</strong></h5>
                     <p class="text-muted">Drag and drop files here, or click to browse</p>
-
-                    <label for="transcript_file" class="custom-file-upload">
-                        Choose Transcript File
-                    </label>
+                    <label for="transcript_file" class="custom-file-upload">Choose Transcript File</label>
                     <input type="file" id="transcript_file" name="transcript_file" accept=".txt" required>
                     <br><br>
                     <div style="display: flex; justify-content: center; gap: 32px;">
                       <div>
-                        <label for="audio_file_agent" class="custom-file-upload">
-                            Choose Agent Audio File
-                        </label>
+                        <label for="audio_file_agent" class="custom-file-upload">Choose Agent Audio File</label>
                         <input type="file" id="audio_file_agent" name="audio_file_agent" accept="audio/*" required>
                       </div>
                       <div>
-                        <label for="audio_file_employee" class="custom-file-upload">
-                            Choose Employee Audio File
-                        </label>
+                        <label for="audio_file_employee" class="custom-file-upload">Choose Employee Audio File</label>
                         <input type="file" id="audio_file_employee" name="audio_file_employee" accept="audio/*" required>
                       </div>
                     </div>
                     <div class="file-names mt-2" id="fileNames"></div>
                     <div id="audioPreview"></div>
+                  </div>
                 </div>
-            </div>
-            <div class="mt-3">
-              <div style="display: flex; justify-content: center; margin-top: 20px;">
-                <button type="submit" class="btn btn-success" style="padding: 10px 25px; font-size: 16px;">Upload</button>
-              </div>
-              <div id="uploadSpinner" style="display:none; margin-top:20px; text-align:center;">
-                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                  <span class="visually-hidden">Uploading...</span>
+                <div class="mt-3">
+                  <div style="display: flex; justify-content: center; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" style="padding: 10px 25px; font-size: 16px;">Upload</button>
+                  </div>
+                  <div id="uploadSpinner" style="display:none; margin-top:20px; text-align:center;">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                      <span class="visually-hidden">Uploading...</span>
+                    </div>
+                    <div style="margin-top:8px; color:#007bff; font-weight:500;">Processing, please wait...</div>
+                  </div>
                 </div>
-                <div style="margin-top:8px; color:#007bff; font-weight:500;">Processing, please wait...</div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- Right: Sync Section -->
+        <div class="col-md-6 d-flex align-items-stretch">
+          <div class="card mb-4 w-100 d-flex flex-column justify-content-between" style="height: 95%; min-height: 320px;">
+            <div class="card-body d-flex flex-column justify-content-center align-items-center" style="background-color: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; height: 95%; min-height: 300px;">
+              <h3>Sync & Controls</h3>
+              <!-- Sync from Cloud Button -->
+              <div style="text-align:center; margin-top:20px; width:100%;">
+                <form id="cloudSyncForm" method="POST" action="{{ url_for('sync_cloud') }}" style="display:inline-block;">
+                  <button type="submit" class="btn btn-primary">Sync from Cloud</button>
+                </form>
+                <div id="cloudSyncSpinner" style="display:none; margin-top:10px; text-align:center;">
+                  <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+                    <span class="visually-hidden">Syncing...</span>
+                  </div>
+                  <div style="margin-top:8px; color:#007bff; font-weight:500;">Syncing cloud files, please wait...</div>
+                </div>
+                <button id="localSyncBtn" class="btn btn-primary ms-2">Sync from Local</button>
+                <div id="localSyncSpinner" style="display:none; margin-top:10px; text-align:center;">
+                  <div class="spinner-border text-secondary" role="status" style="width: 2.5rem; height: 2.5rem;">
+                    <span class="visually-hidden">Syncing...</span>
+                  </div>
+                  <div style="margin-top:8px; color:#6c757d; font-weight:500;">Syncing local files, please wait...</div>
+                </div>
+              </div>
+              <!-- Sync Interval Control -->
+              <div style="text-align:center; margin-top:20px; width:100%;">
+                <label for="syncIntervalSelect" style="font-weight:500; margin-right:8px;">Local Sync Interval:</label>
+                <select id="syncIntervalSelect" class="form-select d-inline-block" style="width:120px; display:inline-block;">
+                  <option value="1">1 min</option>
+                  <option value="5">5 min</option>
+                  <option value="10">10 min</option>
+                  <option value="30">30 min</option>
+                  <option value="60">60 min</option>
+                </select>
+                <button id="setSyncIntervalBtn" type="button" class="btn btn-success">Set Sync Interval</button>
+                <span id="syncIntervalStatus" style="margin-left:12px; color:#198754; font-weight:500;"></span>
               </div>
             </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Sync from Cloud Button -->
-      <div style="text-align:center; margin-top:20px;">
-        <form id="cloudSyncForm" method="POST" action="{{ url_for('sync_cloud') }}" style="display:inline-block;">
-          <button type="submit" class="btn btn-primary">Sync from Cloud</button>
-        </form>
-        <div id="cloudSyncSpinner" style="display:none; margin-top:10px; text-align:center;">
-          <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
-            <span class="visually-hidden">Syncing...</span>
           </div>
-          <div style="margin-top:8px; color:#007bff; font-weight:500;">Syncing cloud files, please wait...</div>
         </div>
-        <button id="localSyncBtn" class="btn btn-secondary ms-2">Sync from Local</button>
-        <div id="localSyncSpinner" style="display:none; margin-top:10px; text-align:center;">
-          <div class="spinner-border text-secondary" role="status" style="width: 2.5rem; height: 2.5rem;">
-            <span class="visually-hidden">Syncing...</span>
-          </div>
-          <div style="margin-top:8px; color:#6c757d; font-weight:500;">Syncing local files, please wait...</div>
-        </div>
-      </div>
-
-      <!-- Sync Interval Control -->
-      <div style="text-align:center; margin-top:20px;">
-        <label for="syncIntervalSelect" style="font-weight:500; margin-right:8px;">Local Sync Interval:</label>
-        <select id="syncIntervalSelect" class="form-select d-inline-block" style="width:120px; display:inline-block;">
-          <option value="1">1 min</option>
-          <option value="5">5 min</option>
-          <option value="10">10 min</option>
-          <option value="30">30 min</option>
-          <option value="60">60 min</option>
-        </select>
-        <button id="setSyncIntervalBtn" type="button" class="btn btn-info ms-2">Set Sync Interval</button>
-        <span id="syncIntervalStatus" style="margin-left:12px; color:#198754; font-weight:500;"></span>
       </div>
     </div>
   </div>
