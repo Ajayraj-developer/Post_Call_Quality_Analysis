@@ -462,7 +462,12 @@ def dashboard():
             "sentiment": sentiment_label,
             "sentiment_icon": sentiment_icon,
             "overall_score": call.get("overall_score", "N/A"),
+            "valence_list": call.get("valence_list", []),
+            "arousal_list": call.get("arousal_list", []),
+            "agent_speech_rate": call.get("avg_speech_rate", 0)
+            
         })
+    
     return render_template('dashboard.html', user=session.get("user"), call_list=call_list)
 
 @app.route('/sync_cloud', methods=['POST'])

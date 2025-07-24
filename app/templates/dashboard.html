@@ -437,64 +437,36 @@
         <nav
           class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0"
         >
-          <div class="navbar-nav align-items-center ms-auto">
-            <!-- <div class="nav-item dropdown">
+         <div class="navbar-nav align-items-center ms-auto">
+        <!-- <div class="nav-item dropdown">
           <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
             <i class="fa fa-bell me-2"></i>
             <span class="d-none d-lg-inline-flex">Notifications</span>
           </a>
         </div> -->
-            <div class="nav-item dropdown">
-              <a
-                href="#"
-                class="nav-link dropdown-toggle"
-                data-bs-toggle="dropdown"
-              >
-                <img
-                  class="rounded-circle me-2"
-                  src="../static/img/logoo.png"
-                  alt="Logo"
-                  style="width: 40px; height: 40px"
-                />
-                <!-- <span class="d-none d-lg-inline-flex" id="username">{{ user.name if user else 'Guest User' }}</span> -->
-                <span
-                  class="d-none d-lg-inline-flex"
-                  id="username"
-                  style="font-weight: bolder"
-                  >ECHOVERGE</span
-                >
-              </a>
-              <div class="dropdown-menu dropdown-menu-end">
-                <div
-                  class="dropdown-item"
-                  style="
-                    border-bottom: 1px solid #e9ecef;
-                    background-color: #f8f9fa;
-                  "
-                >
-                  <div style="font-weight: 600; color: #333">
-                    {{ user.name if user else 'Guest User' }}
-                  </div>
-                  <div style="font-size: 12px; color: #6c757d">
-                    {{ user.preferred_username if user else '' }}
-                  </div>
-                </div>
-                <a href="#" class="dropdown-item">
-                  <i class="fas fa-user-circle"></i>Profile
-                </a>
-                <a href="#" class="dropdown-item">
-                  <i class="fas fa-cog"></i>Settings
-                </a>
-                <a
-                  href="{{ url_for('logout') if user else '#' }}"
-                  class="dropdown-item"
-                  style="color: #dc3545"
-                >
-                  <i class="fas fa-sign-out-alt"></i>Logout
-                </a>
-              </div>
+        <div class="nav-item dropdown">
+          <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+            <img class="rounded-circle me-2" src="../static/img/logoo.png"  alt="Logo" style="width: 40px; height: 40px;">
+            <!-- <span class="d-none d-lg-inline-flex" id="username">{{ user.name if user else 'Guest User' }}</span> -->
+            <span class="d-none d-lg-inline-flex" id="username" style="font-weight: bolder ;">ECHOVERGE</span>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end">
+            <div class="dropdown-item" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
+              <div style="font-weight: 600; color: #333;">{{ user.name if user else 'Guest User' }}</div>
+              <div style="font-size: 12px; color: #6c757d;">{{ user.preferred_username if user else '' }}</div>
             </div>
+            <a href="#" class="dropdown-item">
+              <i class="fas fa-user-circle"></i>Profile
+            </a>
+            <a href="#" class="dropdown-item">
+              <i class="fas fa-cog"></i>Settings
+            </a>
+            <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: #dc3545;">
+              <i class="fas fa-sign-out-alt"></i>Logout
+            </a>
           </div>
+        </div>
+      </div>
         </nav>
         <!-- Metric Cards Section -->
         <div class="container-fluid pt-4 px-4">
@@ -1044,11 +1016,15 @@
                                           department: "{{ call.get('department', 'Unassigned') }}",
                                             resolved: "{{ call.get('resolved', 'no') }}",
                                               duration: {{ call.get('duration', 0) }},
-                                        agent_name: "{{ call.get('agent_name', 'Unknown Agent') }}"
+                                        agent_name: "{{ call.get('agent_name', 'Unknown Agent') }}",
+                                        valence_score:"{{ call.get('valence_list', 0) }}",
+                                        arousal_score:"{{ call.get('arousal_list', 0) }}",
                                       } {% if not loop.last %}, {% endif %}
                                       {% endfor %}
                                       {% endif %}
                                   ];
+
+                                  console.log("Call List Data:", callListData);
 
                                       // Agent Performance Chart Variables
                                       let agentPerformanceChart = null;
@@ -1717,10 +1693,12 @@
             const overallScores = [];
             const positiveRatios = [];
             const resolutionRates = [];
+            const voiceElevationFreqs = [];
 
             // Loop through each time slot
             slots.forEach((slot, index) => {
               let filteredCalls;
+              
 
               if (timeFrame === 'MTD') {
                 filteredCalls = callListData.filter(call => {
@@ -1751,6 +1729,25 @@
               const resolvedCount = filteredCalls.filter(c => c.resolved.toLowerCase() === 'yes').length;
               const resolutionRate = callCount > 0 ? Math.round((resolvedCount / callCount) * 100) : 0;
               resolutionRates.push(resolutionRate);
+
+              // Voice Elevation Frequency
+let totalElevatedCounts = 0;
+
+filteredCalls.forEach(c => {
+  let arousalList = [];
+  try {
+    arousalList = JSON.parse(c.arousal_score || '[]');
+  } catch (e) {
+    arousalList = [];
+  }
+
+  const elevatedCount = arousalList.filter(val => parseFloat(val) > 0.85).length;
+  totalElevatedCounts += elevatedCount;
+});
+
+const avgElevation = callCount > 0 ? parseFloat((totalElevatedCounts / callCount).toFixed(2)) : 0;
+voiceElevationFreqs.push(avgElevation);
+
             });
 
             // Destroy existing chart
@@ -1797,7 +1794,20 @@
                     pointBackgroundColor: 'rgba(33, 150, 243, 1)',
                     borderWidth: 2,
                     order: 3
-                  }
+                  },
+                  {
+  label: 'Voice Elevation Frequency',
+  data: voiceElevationFreqs,
+  borderColor: 'rgba(255, 87, 34, 1)',
+  backgroundColor: 'rgba(255, 87, 34, 0.1)',
+  fill: true,
+  tension: 0.4,
+  pointRadius: 3,
+  pointBackgroundColor: 'rgba(255, 87, 34, 1)',
+  borderWidth: 2,
+  order: 4
+}
+
                 ]
               },
               options: {
@@ -1817,6 +1827,7 @@
                       label: function (context) {
                         let label = context.dataset.label || '';
                         let value = context.parsed.y;
+                        
                         return `${label}: ${value}%`;
                       }
                     }
