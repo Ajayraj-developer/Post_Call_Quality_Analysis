@@ -15,6 +15,9 @@ import wave
 import re
 from apscheduler.schedulers.background import BackgroundScheduler
 import certifi
+from pydub import AudioSegment
+from dotenv import load_dotenv
+load_dotenv()
 
 
 # Microsoft Authentication Configuration
@@ -247,13 +250,10 @@ def upload_audio():
         )
 
         # Calculate duration (in seconds) for agent audio (as a proxy for call duration)
-        import wave
         def get_audio_duration(filepath):
             try:
-                with wave.open(filepath, 'rb') as wf:
-                    frames = wf.getnframes()
-                    rate = wf.getframerate()
-                    return round(frames / float(rate), 2)
+                audio = AudioSegment.from_file(filepath)
+                return round(len(audio) / 1000, 2)  # duration in seconds
             except Exception:
                 return None
         duration = get_audio_duration(audio_path_agent)
@@ -292,18 +292,34 @@ def upload_audio():
 
         # Extract 6-digit call id from agent audio or employee audio filename
         call_id_val = None
-        match = re.search(r"(\d{6})", os.path.basename(agent_audio_path))
+        match = re.search(r"(\d{6})", os.path.basename(audio_path_agent))
         if not match:
-            match = re.search(r"(\d{6})", os.path.basename(emp_audio_path))
+            match = re.search(r"(\d{6})", os.path.basename(audio_path_employee))
         if match:
             call_id_val = match.group(1)
         else:
             call_id_val = "N/A"
 
+        # Calculate frequency of voice elevation (arousal > threshold)
+        arousal_threshold = 0.85
+        voice_elevation_freq = sum(1 for a in arousal_list if a > arousal_threshold)
+
+        # Calculate SOP steps followed
+        sop_steps_followed = 0
+        if analysis.get('sop_adherence'):
+            sop = analysis['sop_adherence']
+            sop_steps = [
+                sop.get('identity_verification'),
+                sop.get('security_questions'),
+                sop.get('two_factor_enabled'),
+                sop.get('account_activity_review'),
+                sop.get('security_best_practices')
+            ]
+            sop_steps_followed = sum(1 for s in sop_steps if s)
         # Save all analysis and metadata to MongoDB (just like manual upload)
         doc = {
-            "agent_audio": os.path.basename(agent_audio_path),
-            "employee_audio": os.path.basename(emp_audio_path),
+            "agent_audio": os.path.basename(audio_path_agent),
+            "employee_audio": os.path.basename(audio_path_employee),
             "transcript": transcript,
             "analysis": analysis,
             "segment_times_agent": segment_times_agent,
@@ -329,19 +345,26 @@ def upload_audio():
             "user_email": session.get("user", {}).get("preferred_username", ""),
             "created_at": datetime.utcnow(),
             "call_start": call_start,
-            "call_end": call_end
+            "call_end": call_end,
+            "voice_elevation_freq": voice_elevation_freq,
+            "sop_steps_followed": sop_steps_followed
         }
         try:
-            calls_collection.insert_one(doc)
+            result = calls_collection.insert_one(doc)
         except Exception as e:
             if 'duplicate key error' in str(e):
                 print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
+                result = None
             else:
                 print(f"[ERROR] Exception inserting doc: {e}")
                 errors = []  # Ensure errors is defined
                 errors.append(f"Error inserting doc: {str(e)}")
-        call_id = str(result.inserted_id)
-        return redirect(url_for('view_call', call_id=call_id))
+                result = None
+        if result:
+            call_id = str(result.inserted_id)
+            return redirect(url_for('view_call', call_id=call_id))
+        else:
+            return "Error inserting document into database.", 500
 
     # Fetch call list for display
     call_list = []
@@ -375,13 +398,12 @@ def upload_audio():
         agent_sentiment_percent = call.get("agent_sentiment_percent")
         sentiment_label, sentiment_icon = get_sentiment_label_and_icon(agent_sentiment_percent)
         # Extract 6-digit call id from agent audio or transcript filename
-        import re
         call_id = None
         agent_audio = call.get("agent_audio", "")
-        match = re.search(r"(\d{6})", agent_audio)  # <-- FIX: remove extra backslash
+        match = re.search(r"(\d{6})", agent_audio)
         if not match:
             emp_audio = call.get("employee_audio", "")
-            match = re.search(r"(\d{6})", emp_audio)  # <-- FIX: remove extra backslash
+            match = re.search(r"(\d{6})", emp_audio)
         if not match:
             pass
         if match:
@@ -450,6 +472,18 @@ def dashboard():
             call_id = match.group(1)
         else:
             call_id = "N/A"
+        # Use sop_steps_followed from doc if present, else fallback to calculation from analysis
+        sop_steps_followed = call.get('sop_steps_followed')
+        if sop_steps_followed is None:
+            sop = (call.get("analysis") or {}).get("sop_adherence", {})
+            sop_steps = [
+                sop.get('identity_verification'),
+                sop.get('security_questions'),
+                sop.get('two_factor_enabled'),
+                sop.get('account_activity_review'),
+                sop.get('security_best_practices')
+            ]
+            sop_steps_followed = sum(1 for s in sop_steps if s)
         call_list.append({
             "_id": str(call.get("_id")),
             "call_id": call_id,
@@ -464,12 +498,19 @@ def dashboard():
             "overall_score": call.get("overall_score", "N/A"),
             "valence_list": call.get("valence_list", []),
             "arousal_list": call.get("arousal_list", []),
-            "agent_speech_rate": call.get("avg_speech_rate", 0)
-            
+            "agent_speech_rate": call.get("avg_speech_rate", 0),
+            "voice_elevation_freq": call.get("voice_elevation_freq", "N/A"),
+            "sop_steps_followed": sop_steps_followed
         })
     
     return render_template('dashboard.html', user=session.get("user"), call_list=call_list)
-
+@app.route('/team')
+def team():
+    return render_template('team.html')
+@app.route('/faq')
+@login_required
+def faq():
+    return render_template('faq.html', user=session.get("user"))
 @app.route('/sync_cloud', methods=['POST'])
 @login_required
 def sync_cloud():
@@ -758,10 +799,8 @@ def sync_local():
             )
             def get_audio_duration(filepath):
                 try:
-                    with wave.open(filepath, 'rb') as wf:
-                        frames = wf.getnframes()
-                        rate = wf.getframerate()
-                        return round(frames / float(rate), 2)
+                    audio = AudioSegment.from_file(filepath)
+                    return round(len(audio) / 1000, 2)  # duration in seconds
                 except Exception:
                     return None
             duration = get_audio_duration(agent_audio_path)
@@ -904,10 +943,8 @@ def perform_local_sync():
             )
             def get_audio_duration(filepath):
                 try:
-                    with wave.open(filepath, 'rb') as wf:
-                        frames = wf.getnframes()
-                        rate = wf.getframerate()
-                        return round(frames / float(rate), 2)
+                    audio = AudioSegment.from_file(filepath)
+                    return round(len(audio) / 1000, 2)  # duration in seconds
                 except Exception:
                     return None
             duration = get_audio_duration(agent_audio_path)
@@ -1025,9 +1062,15 @@ def get_sync_job_status():
                     print(f"[SCHEDULER][WARN] Trigger does not have 'interval': {trigger}")
             except Exception as e:
                 print(f"[SCHEDULER][ERROR] Could not extract interval: {e}")
+            # Safely handle next_run_time
+            next_run = job.next_run_time if hasattr(job, 'next_run_time') else None
+            if next_run is not None:
+                next_run_str = str(next_run)
+            else:
+                next_run_str = "Not scheduled"
             return {
                 'running': True,
-                'next_run_time': str(job.next_run_time),
+                'next_run_time': next_run_str,
                 'interval': interval_minutes if interval_minutes is not None else current_sync_interval['minutes']
             }
         else:
@@ -1047,8 +1090,12 @@ def get_sync_status():
 def set_sync_interval():
     data = request.get_json()
     minutes = int(data.get('minutes', 1))
+    from apscheduler.jobstores.base import JobLookupError
     try:
         scheduler.remove_job('local_sync_job')
+    except JobLookupError:
+        # Job does not exist, this is fine
+        pass
     except Exception as e:
         print(f"[SCHEDULER][ERROR] Could not remove job: {e}")
     try:
@@ -1061,15 +1108,11 @@ def set_sync_interval():
 
 # Only add the job and start scheduler in main process (not reloader)
 if __name__ == '__main__':
-    # Only run scheduler in the main process, not the Flask reloader
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        print("[SCHEDULER] Starting scheduler in main process.")
-        if not scheduler.get_job('local_sync_job'):
-            scheduler.add_job(perform_local_sync, 'interval', minutes=current_sync_interval['minutes'], id='local_sync_job', replace_existing=True)
-        scheduler.start()
-    else:
-        print("[SCHEDULER] Not starting scheduler (not main process).")
-    app.run(debug=True)
+    print("[SCHEDULER] Starting scheduler.")
+    if not scheduler.get_job('local_sync_job'):
+        scheduler.add_job(perform_local_sync, 'interval', minutes=current_sync_interval['minutes'], id='local_sync_job', replace_existing=True)
+    scheduler.start()
+    app.run(debug=True, use_reloader=False)
 
 @app.route('/list_call_ids', methods=['GET'])
 @login_required

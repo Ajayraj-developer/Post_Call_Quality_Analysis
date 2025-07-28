@@ -2,7 +2,7 @@ import re
 import json
 import requests
 
-API_KEY = "AIzaSyDUYptZMBMXuOi9bLba2egFrwYICRBpZlY"
+API_KEY = "AIzaSyB55VmTYkOD3ovTgkVsChblm-V1A2rxdRo"
 ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
 PROMPTS = {
