@@ -1,4 +1,5 @@
 from flask import Flask, request, render_template, jsonify, session, redirect, url_for
+from send_mail_util import send_email
 import msal
 import json
 from functools import wraps
@@ -18,6 +19,7 @@ import certifi
 from pydub import AudioSegment
 from dotenv import load_dotenv
 load_dotenv()
+
 
 
 # Microsoft Authentication Configuration
@@ -426,7 +428,23 @@ def upload_audio():
             # "timestamp": datetime.now()  # Removed this line
         })
     return render_template('upload.html', user=session.get("user"), call_list=call_list)
-
+# --- Notification Email Route ---
+@app.route('/send_notification_mail', methods=['POST'])
+@login_required
+def send_notification_mail():
+    manager_email = "ravi.v72@lwpcoe.com"
+    subject = "Sample Notification"
+    body = (
+        "Hello Manager,\n\n"
+        "This is a sample email sent from the dashboard notification button.\n\n"
+        "Best regards,\nCOE App System"
+    )
+    email_sent = send_email(manager_email, subject, body)
+    if email_sent:
+        return jsonify({'message': 'Sample email sent successfully!'}), 200
+    else:
+        return jsonify({'error': 'Failed to send sample email.'}), 500
+import msal
 @app.route('/dashboard')
 @login_required
 def dashboard():

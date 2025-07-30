@@ -188,11 +188,42 @@
         <!-- Navbar -->
         <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
           <div class="navbar-nav align-items-center ms-auto">
+            
             <div class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                <button id="notifyBtn" class="btn btn-outline-primary me-3">
+                <i class="fa fa-bell me-2"></i>
+                <span class="d-none d-lg-inline-flex">Send Notification</span>
+                </button>
+          <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                var notifyBtn = document.getElementById('notifyBtn');
+                if (notifyBtn) {
+                  notifyBtn.onclick = function() {
+                    if (confirm("Do you confirm sending a notification email?")) {
+                      fetch('/send_notification_mail', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        }
+                      })
+                      .then(response => response.json())
+                      .then(data => {
+                        if (data.message) {
+                          alert(data.message);
+                        } else {
+                          alert(data.error || "Failed to send email.");
+                        }
+                      })
+                      .catch(() => alert("Error sending email."));
+                    }
+                  }
+                }
+            });
+          </script>
                 <img class="rounded-circle me-2" src="../static/img/logoo.png" alt="Logo" style="width: 40px; height: 40px;">
                 <span class="d-none d-lg-inline-flex" id="username" style="font-weight: bolder;">ECHOVERGE</span>
-                <a href="{{ url_for('team') }}" class="d-none d-lg-inline-flex" style="font-size: 12px; color: #6c757d; text-decoration: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Developed by GenAI Foundry</a></a>
+                <a href="{{ url_for('team') }}" class="d-none d-lg-inline-flex" style="font-size: 12px; color: #6c757d; text-decoration: none;margin-left: 220px;">Developed by GenAI Foundry</a></a>
                 <div class="dropdown-menu dropdown-menu-end">
                   <div class="dropdown-item" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
                     <div style="font-weight: 600; color: #333;">{{ user.name if user else 'Guest User' }}</div>
