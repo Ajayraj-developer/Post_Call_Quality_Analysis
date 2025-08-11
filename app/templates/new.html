@@ -5,15 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Call Sentiment Analysis Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- ...existing styles... -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/new.css') }}">
 </head>
 <body>
     <div class="dashboard">
+        <!-- Back Icon Button -->
+        <button onclick="window.history.back()" title="Go Back" style="position: absolute; top: 24px; left: 24px; background: none; border: none; cursor: pointer; z-index: 10;">
+            <i class="fa fa-arrow-left" style="font-size: 28px; color: #3b82f6;"></i>
+        </button>
+
         <div class="analytics-header">
             <h1 class="header-title" style="color: white;">Call Sentiment Analysis</h1>
-            <button class="action-button">Download Report</button>
+            <button class="action-button" id="download-report-btn">Download Report</button>
         </div>
         <!-- Overall Score Card -->
         <div class="compliance-card highlight">
@@ -51,7 +58,7 @@
                     <strong>Date & Time</strong> May 4, 2025 10:15 AM
                 </div>
                 <div class="detail-item">
-                    <strong>Location</strong> New York, USA
+                    <strong>User Location</strong> Coimbatore, India
                 </div>
             </div>
 
@@ -144,13 +151,14 @@
             <!-- Sentiment Flow -->
             <div class="chart-container">
                 <h2 class="section-title">Sentiment Flow</h2>
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color customer" style="background-color: #3b82f6;"></div>
+                <!-- Legend for Sentiment Flow -->
+                <div class="legend" style="display: flex; gap: 18px; margin-bottom: 10px;">
+                    <div class="legend-item" style="display: flex; align-items: center;">
+                        <span style="display:inline-block; width:18px; height:10px; background:#3b82f6; border-radius:3px; margin-right:7px;"></span>
                         <span>Employee Sentiment</span>
                     </div>
-                    <div class="legend-item">
-                        <div class="legend-color agent" style="background-color: #10b981;"></div>
+                    <div class="legend-item" style="display: flex; align-items: center;">
+                        <span style="display:inline-block; width:18px; height:10px; background:#10b981; border-radius:3px; margin-right:7px;"></span>
                         <span>Agent Sentiment</span>
                     </div>
                 </div>
@@ -160,13 +168,14 @@
             <!-- Agent Speaking Rate -->
             <div class="chart-container">
                 <h2 class="section-title">Overall Speaking Rate</h2>
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color agent" style="background-color: #10b981;"></div>
+                <!-- Legend for Speaking Rate -->
+                <div class="legend" style="display: flex; gap: 18px; margin-bottom: 10px;">
+                    <div class="legend-item" style="display: flex; align-items: center;">
+                        <span style="display:inline-block; width:18px; height:10px; background:#10b981; border-radius:3px; margin-right:7px;"></span>
                         <span>Agent Speaking Rate (ZCR)</span>
                     </div>
-                    <div class="legend-item">
-                        <div class="legend-color customer" style="background-color: #3b82f6;"></div>
+                    <div class="legend-item" style="display: flex; align-items: center;">
+                        <span style="display:inline-block; width:18px; height:10px; background:#3b82f6; border-radius:3px; margin-right:7px;"></span>
                         <span>Employee Speaking Rate (ZCR)</span>
                     </div>
                 </div>
@@ -297,6 +306,9 @@
                         <span class="status-text" id="voice-elevation-count">Calculating...</span>
                     </div>
                     <p class="compliance-description" id="voice-elevation-last">Calculating...</p>
+                    <p class="compliance-description" style="color:#22c55e; font-size:13px; margin-top:2px;">
+                        Optimal: Should not cross arousal threshold (0.85)
+                    </p>
                 </div>
             </div>
             <br>
@@ -811,5 +823,20 @@ if (freqCard && vadSection) {
         }
     }
 })();
+
+// PDF Download functionality
+document.getElementById('download-report-btn').addEventListener('click', function() {
+        const dashboard = document.querySelector('.dashboard');
+        html2canvas(dashboard, {scale: 2, useCORS: true}).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new window.jspdf.jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save('call_sentiment_report.pdf');
+        });
+    });
 </script>
 </html>
