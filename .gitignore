@@ -47,11 +47,7 @@ Thumbs.db
 # Logs
 *.log
 
-# Model files (if not needed)
-*.pkl
-*.h5
-*.pt
-*.onnx
+
 
 # Other
 *.bak
