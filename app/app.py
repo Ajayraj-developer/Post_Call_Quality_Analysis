@@ -172,7 +172,7 @@ def logout():
         AUTHORITY + "/oauth2/v2.0/logout" +
         "?post_logout_redirect_uri=" + url_for("login", _external=True, _scheme="http", _server="localhost:5000"))
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/upload', methods=['GET', 'POST'])
 @login_required
 def upload_audio():
     if request.method == 'POST':
@@ -428,6 +428,11 @@ def upload_audio():
             # "timestamp": datetime.now()  # Removed this line
         })
     return render_template('upload.html', user=session.get("user"), call_list=call_list)
+# Set dashboard as the landing page
+@app.route('/')
+@login_required
+def landing_dashboard():
+    return dashboard()
 # --- Notification Email Route ---
 @app.route('/send_notification_mail', methods=['POST'])
 @login_required

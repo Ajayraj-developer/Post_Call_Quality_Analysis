@@ -63,7 +63,7 @@
       font-weight: 650;
       border-left: 3px solid var(--light);
       border-radius: 0 30px 30px 0;
-      font-size: 20px;
+      font-size: 18px;
     }
 
     .sidebar .nav-link:hover,
@@ -87,6 +87,7 @@
       margin-left: 250px;
       min-height: 100vh;
       background: #fff;
+      
     }
 
     .content .navbar {
@@ -232,7 +233,7 @@
         <a href="{{ url_for('dashboard') }}" class="nav-item nav-link"><i class="fa fa-list me-2"></i>Dashboard</a>
         <a href="{{ url_for('upload_audio') }}" class="nav-item nav-link active"><i class="fa fa-upload me-2"></i>Upload</a>
         <a href="{{ url_for('faq') }}" class="nav-item nav-link"><i class="far fa-file-alt me-2"></i>FAQs</a>
-        <a href="#" class="nav-item nav-link"><i class="fa fa-cog me-2"></i>Settings</a>
+
         <a href="http://localhost:8080" class="nav-item nav-link" target="_blank"><i class="fa fa-cog me-2"></i>Live board</a>
       </div>
     </nav>
@@ -293,9 +294,9 @@
             <a href="#" class="dropdown-item">
               <i class="fas fa-user-circle"></i>Profile
             </a>
-            <a href="#" class="dropdown-item">
-              <i class="fas fa-cog"></i>Settings
-            </a>
+                            <a href="#" class="dropdown-item">
+                  <i class="fas fa-cog"></i>Settings
+                </a>
             <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: #dc3545;">
               <i class="fas fa-sign-out-alt"></i>Logout
             </a>
@@ -352,7 +353,7 @@
         </div>
         <!-- Right: Sync Section -->
         <div class="col-md-6 d-flex align-items-stretch">
-          <div class="card mb-4 w-100 d-flex flex-column justify-content-between" style="height: 95%; min-height: 320px;">
+          <div class="card mb-4 w-100 d-flex flex-column justify-content-between" style="height: 95%; min-height: 320px;font-size: 15px;">
             <div class="card-body d-flex flex-column justify-content-center align-items-center" style="padding-top:0px;margin-top: 0px;background-color: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; height: 95%; min-height: 300px;">
               <h3>Sync & Controls</h3>
               <div style="margin-top: 20px; background-color: rgb(241, 237, 237); padding: 20px; border-radius: 10px; border: 2px dashed #ccc; text-align: center; transition: 0.3s; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; width: 100%;">
@@ -387,7 +388,7 @@
                     <option value="60">60 min</option>
                   </select>
                   <button id="setSyncIntervalBtn" type="button" class="btn btn-success">Set Sync Interval</button>
-                  <span id="syncIntervalStatus" style="margin-left:12px; color:#198754; font-weight:500;"></span>
+                  <span id="syncIntervalStatus" style="margin-left:12px; color:#198754; font-weight:500; "></span>
                 </div>
               </div>
             </div>
