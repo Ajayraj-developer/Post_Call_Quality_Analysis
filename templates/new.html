@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Sentiment Analysis Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- ...existing styles... -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/new.css') }}">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Back Icon Button -->
+        <button onclick="window.history.back()" title="Go Back" style="position: absolute; top: 24px; left: 24px; background: none; border: none; cursor: pointer; z-index: 10;">
+            <i class="fa fa-arrow-left" style="font-size: 28px; color: #3b82f6;"></i>
+        </button>
+
+        <div class="analytics-header">
+            <h1 class="header-title" style="color: white;">Call Sentiment Analysis</h1>
+            <button class="action-button" id="download-report-btn">Download Report</button>
+        </div>
+        <!-- Overall Score Card -->
+        <div class="compliance-card highlight">
+            <h3 style="padding-right: 25px;">Overall Score</h3>
+            <p style="font-size: 50px; margin: 10px 0;padding-right: 25px;">
+                {% if overall_score >= 8 %}🌟{% elif overall_score >= 6 %}😊{% elif overall_score >= 4 %}😐{% else %}😟{% endif %}
+            </p>
+            <div class="score-display">
+                {{ '%.1f' % overall_score }}<span class="score-fraction">/10</span>
+            </div>
+            <p class="score-description">
+                {% if overall_score >= 8 %}
+                    Excellent overall performance across all aspects.
+                {% elif overall_score >= 6 %}
+                    Good performance, minor improvements possible.
+                {% elif overall_score >= 4 %}
+                    Mixed results, several areas need attention.
+                {% else %}
+                    Significant improvement needed in multiple areas.
+                {% endif %}
+            </p>
+        </div>
+        <br>
+        <!-- Top Section Grid -->
+        <div class="grid-container">
+            <!-- Call Details -->
+            <div>
+                <h2 class="section-title">
+                    <i class="fa fa-phone icon-blue"></i> Call Details
+                </h2>
+                <div class="detail-item">
+                    <strong>Duration</strong> 12:34
+                </div>
+                <div class="detail-item">
+                    <strong>Date & Time</strong> May 4, 2025 10:15 AM
+                </div>
+                <div class="detail-item">
+                    <strong>User Location</strong> Coimbatore, India
+                </div>
+            </div>
+
+            <!-- Agent Information -->
+            <div>
+                <h2 class="section-title">
+                    <i class="fa fa-user-circle icon-blue"></i> Agent Information
+                </h2>
+                <div class="detail-item">
+                    <strong>Name</strong> Michael Thompson
+                </div>
+                <div class="detail-item">
+                    <strong>Title</strong> Customer Support 
+                </div>
+                <div class="detail-item">
+                    <strong>Agent ID</strong> AG-2025-0742
+                </div>
+                <div class="detail-item">
+                    <strong>Team</strong> Banking Support
+                </div>
+            </div>
+
+            <!-- Recording Metadata -->
+            <div>
+                <h2 class="section-title">
+                    <i class="fa fa-microphone icon-blue"></i> Recording Metadata
+                </h2>
+                <div class="detail-item">
+                    <strong>Call ID</strong> CALL-25050415-8742
+                </div>
+                <div class="detail-item">
+                    <strong>Audio Format</strong> MP3 
+                </div>
+                <div class="detail-item">
+                    <strong>File Size</strong> 4.2 MB
+                </div>
+                <div class="detail-item">
+                    <strong>Channel</strong> Telephone
+                </div>
+            </div>
+        </div>
+
+        <!-- Sentiment Boxes -->
+        <div class="grid-container">
+            <div class="sentiment-box">
+                <h2>Employee Sentiment</h2>
+                <div class="percentage1">
+                    {{ employee_sentiment_percent if employee_sentiment_percent is not none else 'N/A' }}%
+                </div>
+                {% if employee_sentiment_percent is not none %}
+                    {% if employee_sentiment_percent < 40 %}
+                        <p>Started concerned, ended unsatisfied</p>
+                        <p>Negative experience, needs improvement</p>
+                    {% elif employee_sentiment_percent < 70 %}
+                        <p>Mixed emotions detected</p>
+                        <p>Some improvement, but not fully satisfied</p>
+                    {% else %}
+                        <p>Started concerned, ended satisfied</p>
+                        <p>Significant improvement throughout the call</p>
+                    {% endif %}
+                {% else %}
+                    <p>Sentiment data unavailable</p>
+                {% endif %}
+            </div>
+
+            <div class="sentiment-box">
+                <h2>Agent Sentiment</h2>
+                <div class="percentage1">
+                    {{ agent_sentiment_percent if agent_sentiment_percent is not none else 'N/A' }}%
+                </div>
+                {% if agent_sentiment_percent is not none %}
+                    {% if agent_sentiment_percent < 40 %}
+                        <p>Agent struggled to maintain professionalism</p>
+                        <p>Negative tone detected during interaction</p>
+                    {% elif agent_sentiment_percent < 70 %}
+                        <p>Generally professional, but some lapses</p>
+                        <p>Mixed tone throughout the call</p>
+                    {% else %}
+                        <p>Consistently professional and helpful</p>
+                        <p>Maintained positive tone throughout interaction</p>
+                    {% endif %}
+                {% else %}
+                    <p>Sentiment data unavailable</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- First Row - Sentiment Flow and Speaking Rate -->
+        <div class="row">
+            <!-- Sentiment Flow -->
+            <div class="chart-container">
+                <h2 class="section-title">Sentiment Flow</h2>
+                <!-- Legend for Sentiment Flow -->
+                <div class="legend" style="display: flex; gap: 18px; margin-bottom: 10px;">
+                    <div class="legend-item" style="display: flex; align-items: center;">
+                        <span style="display:inline-block; width:18px; height:10px; background:#3b82f6; border-radius:3px; margin-right:7px;"></span>
+                        <span>Employee Sentiment</span>
+                    </div>
+                    <div class="legend-item" style="display: flex; align-items: center;">
+                        <span style="display:inline-block; width:18px; height:10px; background:#10b981; border-radius:3px; margin-right:7px;"></span>
+                        <span>Agent Sentiment</span>
+                    </div>
+                </div>
+                <canvas id="sentimentChart"></canvas>
+            </div>
+
+            <!-- Agent Speaking Rate -->
+            <div class="chart-container">
+                <h2 class="section-title">Overall Speaking Rate</h2>
+                <!-- Legend for Speaking Rate -->
+                <div class="legend" style="display: flex; gap: 18px; margin-bottom: 10px;">
+                    <div class="legend-item" style="display: flex; align-items: center;">
+                        <span style="display:inline-block; width:18px; height:10px; background:#10b981; border-radius:3px; margin-right:7px;"></span>
+                        <span>Agent Speaking Rate (ZCR)</span>
+                    </div>
+                    <div class="legend-item" style="display: flex; align-items: center;">
+                        <span style="display:inline-block; width:18px; height:10px; background:#3b82f6; border-radius:3px; margin-right:7px;"></span>
+                        <span>Employee Speaking Rate (ZCR)</span>
+                    </div>
+                </div>
+                <canvas id="speakingRateChart"></canvas>
+            </div>
+        </div>
+
+<div class="vad-chart-container full-width-row" id="vad-chart-section">
+  <h2 class="section-title">VAD Over Time</h2>
+  <!-- Custom legend -->
+  <div class="legend1">
+    <div class="legend1-item">
+      <div class="legend1-color" style="background-color:#6366F1;"></div>
+      <span>Valence (Positivity)</span>
+    </div>
+    <div class="legend1-item">
+      <div class="legend1-color" style="background-color:#EC4899;"></div>
+      <span>Arousal (Energy/Intensity)</span>
+    </div>
+    <div class="legend1-item">
+      <div class="legend1-color" style="background-color:#10B981;"></div>
+      <span>Dominance (Control)</span>
+    </div>
+    <div class="legend1-item">
+      <div class="legend1-color" style="background-color:#ff0000;"></div>
+      <span>Arousal Threshold</span>
+    </div>
+  </div>
+  <canvas id="vadChart"></canvas>
+</div>
+            <!-- Second Row - Sentiment Analysis -->
+
+ 
+
+
+
+            <!-- Add this after the Sentiment Analysis section -->
+    <div class="timeline-container">
+        <h2 class="section-title">Call Summary</h2>
+        
+        <!-- Main Summary -->
+        <div class="summary-box">
+            <p>Customer called regarding issues accessing their online banking account. The call began with the customer expressing frustration about repeated login failures. Agent Michael calmly verified the customer’s identity and diagnosed the issue as a password lockout due to multiple incorrect attempts. After resetting the password and enabling 2FA, the agent walked the customer through the login process and provided security best practices. The customer expressed satisfaction with the resolution and appreciated the clear guidance provided. The call ended on a positive note with all issues resolved.</p>
+            
+            <div class="summary-meta" >
+        <div class="meta-item" style="background-color: #e1ecfc; color: #003087; padding: 6px 12px; border-radius: 15px; display: flex; align-items: center; font-size: 14px;">
+            <i class="fa fa-tag" style="margin-right: 6px;"></i> <strong>Topic: &nbsp;</strong> MFA
+        </div>
+        <div class="meta-item" style="background-color: #e1ecfc; color: #003087; padding: 6px 12px; border-radius: 15px; display: flex; align-items: center; font-size: 14px;">
+            <i class="fa fa-credit-card" style="margin-right: 6px;"></i> <strong>Tool:&nbsp; </strong> MS Teams
+        </div>
+        <div class="meta-item" style="background-color: #d4f4df; color: #004d25; padding: 6px 12px; border-radius: 15px; display: flex; align-items: center; font-size: 14px;">
+            <i class="fa fa-check-circle" style="margin-right: 6px;"></i> <strong>Resolved: &nbsp;</strong> Yes
+        </div>
+        <div class="meta-item" style="background-color: #d4f4df; color: #004d25; padding: 6px 12px; border-radius: 15px; display: flex; align-items: center; font-size: 14px;">
+            <i class="fa fa-comment" style="margin-right: 6px;"></i> <strong>Feedback Received: &nbsp;</strong> Yes
+        </div>
+    </div>
+
+        </div>
+
+
+
+        <!-- SOP and Communication Quality Section -->
+        <div class="row-container">
+            <!-- SOP Adherence -->
+            <div class="sop-section">
+                <h3 class="sub-section-title">SOP Adherence</h3>
+                <div class="checklist">
+                    <div class="check-item complete">Identity verification completed</div>
+                    <div class="check-item incomplete">Security questions not asked</div>
+                    <div class="check-item complete">Two-factor authentication enabled</div>
+                    <div class="check-item incomplete">Account activity review skipped</div>
+                    <div class="check-item complete">Security best practices explained</div>
+                </div>
+            </div>
+
+            <!-- Communication Quality Insights -->
+            <div class="communication-section">
+                <h3 class="sub-section-title">Communication Quality Insights</h3>
+                <div class="quality-grid">
+                    <div class="quality-item">
+                        <h4><i class="fa fa-language" aria-hidden="true"></i>  Language Fluency</h4>
+                        <ul>
+                            <li>Clear and structured responses</li>
+                        </ul>   
+                        <h4><h4><i class="fa fa-user-tie" aria-hidden="true"></i>Tone and Professionalism</h4>
+                        <ul>
+                            <li>Empathetic, polite, and professional tone</li>
+                        </ul>
+                    
+                        <h4><i class="fa fa-envelope-open-text" aria-hidden="true"></i>Communication Effectiveness</h4>
+                        <ul>
+                            <li>Guidance on account recovery options</li>
+                            <li>Clarity of steps</li>
+                            <li>Problem-solving ability</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conversation Timeline -->
+        <div class="timeline-container">
+            <h2 class="section-title">Conversation Timeline</h2>
+            <div class="conversation-flow" style="padding: 20px 0;"></div>
+        </div>
+        <!-- END Conversation Timeline -->
+
+        <!-- Compliance Checker Section -->
+        <div class="timeline-container">
+            <h2 class="section-title">Compliance Checker</h2>
+            <div class="compliance-grid">
+                <!-- PII Handling -->
+                <div class="compliance-card" id="pii-handling-status">
+                    <h3>PII Handling Status</h3>
+                    <div class="compliance-status compliant">
+                        <span class="status-icon">✔</span>
+                        <span class="status-text">Compliant</span>
+                    </div>
+                    <p class="compliance-description">All sensitive information properly handled</p>
+                </div>
+                <!-- Call Recording -->
+                <div class="compliance-card" id="frequency-voice-elevation">
+                    <h3>Frequency of Voice Elevation</h3>
+                    <div class="compliance-status retention">
+                        <span class="status-icon">🔊</span>
+                        <span class="status-text" id="voice-elevation-count">Calculating...</span>
+                    </div>
+                    <p class="compliance-description" id="voice-elevation-last">Calculating...</p>
+                    <p class="compliance-description" style="color:#22c55e; font-size:13px; margin-top:2px;">
+                        Optimal: Should not cross arousal threshold (0.85)
+                    </p>
+                </div>
+            </div>
+            <br>
+        </div>
+
+        <!-- Add this CSS -->
+
+        </div>
+
+
+
+        </div>
+        <script>
+            // Sentiment Flow Chart (Dynamic)
+            const sentimentFlow = {{ sentiment_flow|tojson|safe }};
+            const agentLabels = sentimentFlow.filter(m => m.speaker.toLowerCase() === 'agent').map(m => m.time);
+            const agentScores = sentimentFlow.filter(m => m.speaker.toLowerCase() === 'agent').map(m => Math.round(m.score * 100));
+            const employeeLabels = sentimentFlow.filter(m => m.speaker.toLowerCase() === 'employee').map(m => m.time);
+            const employeeScores = sentimentFlow.filter(m => m.speaker.toLowerCase() === 'employee').map(m => Math.round(m.score * 100));
+            const ctx1 = document.getElementById('sentimentChart');
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: agentLabels.length > employeeLabels.length ? agentLabels : employeeLabels,
+                    datasets: [
+                        {
+                            label: 'Agent Sentiment',
+                            data: agentScores,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#10b981',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                        },
+                        {
+                            label: 'Employee Sentiment',
+                            data: employeeScores,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderDash: [5, 5],
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#3b82f6',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 10,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value === 100) return 'Positive';
+                                    if (value === 50) return 'Neutral';
+                                    if (value === 0) return 'Negative';
+                                    return '';
+                                },
+                                font: { size: 12 },
+                                color: '#6b7280'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 12 },
+                                color: '#6b7280'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+
+            // Agent Speaking Rate Chart
+            const ctx2 = document.getElementById('speakingRateChart');
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: {{ segment_times_agent|tojson|safe }},
+                    datasets: [
+                        {
+                            label: 'Agent Speaking Rate (ZCR)',
+                            data: {{ segment_zcrs_agent|tojson|safe }},
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#10b981',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: 'Employee Speaking Rate (ZCR)',
+                            data: {{ segment_zcrs_employee|tojson|safe }},
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#3b82f6',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#10b981',
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 10,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 0.5,
+                            ticks: {
+                                stepSize: 0.04,
+                                font: { size: 12 },
+                                color: '#6b7280'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 12 },
+                                color: '#6b7280'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        
+// Function to populate the dashboard with analysis data
+function populateDashboard(analysisData) {
+    // Call Summary Section
+    if (analysisData.call_summary) {
+        const cs = analysisData.call_summary;
+        document.querySelector('.summary-box p').textContent = 
+            `${cs.generic_issue}. ${cs.agent_actions}. ${cs.resolution_status}. ${cs.customer_feedback}.`;
+        
+        // Update meta items
+        document.querySelector('.meta-item:nth-child(1)').innerHTML = 
+            `<i class="fa fa-tag" style="margin-right: 6px;"></i> <strong>Topic: &nbsp;</strong> ${cs.topic}`;
+        document.querySelector('.meta-item:nth-child(2)').innerHTML = 
+            `<i class="fa fa-credit-card" style="margin-right: 6px;"></i> <strong>Product:&nbsp; </strong> ${cs.product}`;
+        document.querySelector('.meta-item:nth-child(3)').innerHTML = 
+            `<i class="fa fa-check-circle" style="margin-right: 6px;"></i> <strong>Resolved: &nbsp;</strong> ${cs.resolved}`;
+        document.querySelector('.meta-item:nth-child(4)').innerHTML = 
+            `<i class="fa fa-comment" style="margin-right: 6px;"></i> <strong>Feedback Received: &nbsp;</strong> ${cs.feedback_received}`;
+    }
+
+    // SOP Adherence
+    if (analysisData.sop_adherence) {
+        const sop = analysisData.sop_adherence;
+        const checklist = document.querySelector('.checklist');
+        checklist.innerHTML = ''; // Clear existing items
+        
+        // Add items dynamically
+        const items = [
+            {text: "Identity verification completed", key: "identity_verification"},
+            {text: "Security questions not asked", key: "security_questions"},
+            {text: "Two-factor authentication enabled", key: "two_factor_enabled"},
+            {text: "Account activity review skipped", key: "account_activity_review"},
+            {text: "Security best practices explained", key: "security_best_practices"}
+        ];
+        
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = `check-item ${sop[item.key] ? 'complete' : 'incomplete'}`;
+            div.textContent = item.text;
+            checklist.appendChild(div);
+        });
+    }
+
+    // Communication Quality
+    if (analysisData.communication_quality) {
+        const cq = analysisData.communication_quality;
+        const qualityGrid = document.querySelector('.quality-grid');
+        qualityGrid.innerHTML = `
+            <div class="quality-item">
+                <h4><i class="fa fa-language" aria-hidden="true"></i> Language Fluency</h4>
+                <ul>
+                    <li>${cq.clear_responses ? "Clear and structured responses" : "Responses could be clearer"}</li>
+                </ul>   
+                <h4><i class="fa fa-user-tie" aria-hidden="true"></i> Tone and Professionalism</h4>
+                <ul>
+                    <li>${cq.tone_professionalism}</li>
+                    <li>${cq.empathetic_tone ? "Empathetic, polite, professional tone" : "Tone could be more professional"}</li>
+                </ul>
+                <h4><i class="fa fa-envelope-open-text" aria-hidden="true"></i> Communication Effectiveness</h4>
+                <ul>
+                    <li>${cq.communication_effectiveness}</li>
+                    <li>${cq.problem_solving ? "Effective problem-solving demonstrated" : "Problem-solving could be improved"}</li>
+                </ul>
+            </div>
+        `;
+    }
+
+    // Conversation Timeline
+ if (analysisData.conversation_timeline) {
+    const ct = analysisData.conversation_timeline;
+    const timelineContainer = document.querySelector('.conversation-flow');
+    timelineContainer.innerHTML = '';
+
+ct.timeline.forEach((item, index) => {
+    console.log(`Message ${index + 1} - Speaker: ${item.speaker}`); // Debug log
+    const isCustomer = item.speaker.toLowerCase() === 'customer'; // safer detection
+
+        const messageDiv = document.createElement('div');
+        messageDiv.style.display = 'flex';
+        messageDiv.style.alignItems = 'flex-start';
+        messageDiv.style.marginBottom = '16px';
+        messageDiv.style.justifyContent = isCustomer ? 'flex-end' : 'flex-start';
+
+        const avatarUrl = isCustomer 
+            ? 'https://i.pravatar.cc/32?img=5' 
+            : 'https://i.pravatar.cc/32?img=3';
+
+        const bubbleColor = isCustomer ? '#ffecec' : '#e6f0ff';
+        const textAlign = isCustomer ? 'right' : 'left';
+        const avatarMargin = isCustomer ? 'margin-left: 10px;' : 'margin-right: 10px;';
+        const avatarImg = `<img src="${avatarUrl}" alt="${isCustomer ? 'Customer' : 'Agent'}" style="border-radius: 50%; ${avatarMargin}">`;
+
+        const messageContent = `
+            <div style="background-color: ${bubbleColor}; padding: 10px 14px; border-radius: 10px; max-width: 80%;">
+                <div style="font-size: 14px;">${item.content}</div>
+                <div style="font-size: 12px; color: #888; margin-top: 4px; text-align: ${textAlign};">${item.timestamp}</div>
+            </div>
+        `;
+
+        messageDiv.innerHTML = isCustomer 
+            ? `${messageContent}${avatarImg}` 
+            : `${avatarImg}${messageContent}`;
+
+        timelineContainer.appendChild(messageDiv);
+    });
+  }
+}
+
+// When page loads, check for analysis data passed from Flask
+document.addEventListener('DOMContentLoaded', function() {
+    // Get analysis data passed from Flask template
+    const analysisData = JSON.parse('{{ analysis|tojson|safe }}');
+    
+    // Populate the dashboard
+    populateDashboard(analysisData);
+    
+    // Initialize charts (your existing chart code)
+    initializeCharts();
+});
+
+function initializeCharts() {
+    // Your existing chart initialization code
+    // ...
+}
+const ctx = document.getElementById('vadChart').getContext('2d');
+const arousalThreshold = 0.85; // Set your threshold value here
+
+// Use Jinja to inject real VAD data from backend
+var vadLabels = {{ vad_times|tojson|safe }};
+var valenceData = {{ valence_list|tojson|safe }};
+var arousalData = {{ arousal_list|tojson|safe }};
+var dominanceData = {{ dominance_list|tojson|safe }};
+
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: vadLabels,
+    datasets: [
+      {
+        label: 'Valence',
+        data: valenceData,
+        borderColor: '#6366F1',
+        backgroundColor: 'rgba(99, 102, 241, 0.05)',
+        borderWidth: 3,
+        tension: 0.3,
+        fill: true,
+        pointStyle: 'circle',
+        pointRadius: 0,
+        pointHoverRadius: 6
+      },
+      {
+        label: 'Arousal',
+        data: arousalData,
+        borderColor: '#EC4899',
+        backgroundColor: 'rgba(236, 72, 153, 0.05)',
+        borderWidth: 3,
+        tension: 0.3,
+        fill: true,
+        pointStyle: 'rectRot',
+        pointRadius: 0,
+        pointHoverRadius: 6
+      },
+      {
+        label: 'Dominance',
+        data: dominanceData,
+        borderColor: '#10B981',
+        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+        borderWidth: 3,
+        tension: 0.3,
+        fill: true,
+        pointStyle: 'triangle',
+        pointRadius: 0,
+        pointHoverRadius: 6
+      },
+      {
+        label: 'Arousal Threshold',
+        data: Array(vadLabels.length).fill(arousalThreshold),
+        borderColor: '#FF0000', // changed to red
+        borderWidth: 2,
+        borderDash: [8, 6],
+        pointRadius: 0,
+        fill: false,
+        order: 0,
+        type: 'line',
+        spanGaps: true,
+        pointHoverRadius: 0
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Time (seconds)',
+          color: '#6B7280',
+          weight: 'bold',
+          font: {
+            size: 15,
+            weight: '1000'
+          },
+          padding: {top: 10}
+        },
+        grid: {
+          display: false
+        },
+        ticks: {
+          color: '#9CA3AF',
+          font: {
+            size: 12
+          }
+        }
+      },
+      y: {
+        min: 0,
+        max: 1,
+        title: {
+          display: true,
+          text: 'Intensity Level',
+          color: '#6B7280',
+          weight: 'bold',
+          font: {
+            size: 15,
+            weight: '1000'
+          },
+          padding: {bottom: 10}
+        },
+        grid: {
+          color: '#F3F4F6',
+          drawBorder: false
+        },
+        ticks: {
+          color: '#9CA3AF',
+          font: {
+            size: 12
+          },
+          stepSize: 0.2
+        }
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        backgroundColor: '#1F2937',
+        titleColor: '#F9FAFB',
+        bodyColor: '#F9FAFB',
+        bodySpacing: 5,
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: false,
+        callbacks: {
+          title: function(context) {
+            return 'Time: ' + context[0].label + 's';
+          },
+          label: function(context) {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            label += context.parsed.y !== null ? context.parsed.y.toFixed(2) : 'N/A';
+            return label;
+          }
+        }
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      }
+    },
+    elements: {
+      line: {
+        tension: 0.4 // Smooth lines
+      },
+      point: {
+        radius: 3, // Smaller points
+        hoverRadius: 5
+      }
+    }
+  }
+});
+        </script>   
+        
+    </body>
+    <script>
+// Smooth scroll from PII Handling Status card to Conversation Timeline
+const piiCard = document.getElementById('pii-handling-status');
+const timeline = document.getElementById('conversation-timeline');
+if (piiCard && timeline) {
+  piiCard.style.cursor = 'pointer';
+  piiCard.addEventListener('click', function() {
+    timeline.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+// Smooth scroll from Frequency of Voice Elevation card to VAD Chart
+const freqCard = document.getElementById('frequency-voice-elevation');
+const vadSection = document.getElementById('vad-chart-section');
+if (freqCard && vadSection) {
+  freqCard.style.cursor = 'pointer';
+  freqCard.addEventListener('click', function() {
+    vadSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+// Frequency of Voice Elevation Calculation
+(function() {
+    // Use the same threshold as in the VAD chart
+    const arousalThreshold = 0.85;
+    // arousalData is already defined from backend
+    var arousalData = {{ arousal_list|tojson|safe }};
+    var vadLabels = {{ vad_times|tojson|safe }};
+    let count = 0;
+    let lastIdx = -1;
+    for (let i = 0; i < arousalData.length; i++) {
+        if (arousalData[i] > arousalThreshold) {
+            count++;
+            lastIdx = i;
+        }
+    }
+    // Update the UI
+    const countElem = document.getElementById('voice-elevation-count');
+    const lastElem = document.getElementById('voice-elevation-last');
+    if (countElem) {
+        countElem.textContent = count + (count === 1 ? ' instance detected' : ' instances detected');
+    }
+    if (lastElem) {
+        if (lastIdx >= 0 && vadLabels && vadLabels[lastIdx] !== undefined) {
+            lastElem.textContent = 'Last occurrence: ' + vadLabels[lastIdx] + 's';
+        } else {
+            lastElem.textContent = 'No voice elevation detected';
+        }
+    }
+})();
+
+// PDF Download functionality
+document.getElementById('download-report-btn').addEventListener('click', function() {
+        const dashboard = document.querySelector('.dashboard');
+        html2canvas(dashboard, {scale: 2, useCORS: true}).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new window.jspdf.jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save('call_sentiment_report.pdf');
+        });
+    });
+</script>
+</html>

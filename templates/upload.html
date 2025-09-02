@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Call List - Dashboard</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+  <!-- Custom CSS -->
+  <style>
+         /* Custom Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 10px;
+        background: var(--light);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 8px;
+        border: 2px solid #f8f9fa;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #b0b8c1;
+      }
+      /* For Firefox */
+      html {
+        scrollbar-color: #d1d5db #f8f9fa;
+        scrollbar-width: thin;
+      }
+      /* Optional: FAQ section specific (if needed) */
+      .faq-section {
+        scrollbar-color: #d1d5db #f8f9fa;
+        scrollbar-width: thin;
+      }
+    :root {
+      --primary: #0d6efd;
+      --light: #f8f9fa;
+      --dark: #343a40;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--light);
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      width: 250px;
+      background: var(--light);
+      overflow-y: auto;
+    }
+
+    .sidebar .navbar .nav-link {
+      padding: 7px 20px;
+      color: var(--dark);
+      font-weight: 650;
+      border-left: 3px solid var(--light);
+      border-radius: 0 30px 30px 0;
+      font-size: 18px;
+    }
+
+    .sidebar .nav-link:hover,
+    .sidebar .nav-link.active {
+      color: var(--primary);
+      background: #fff;
+      border-color: var(--primary);
+    }
+
+    .sidebar .nav-link i {
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      border-radius: 40px;
+    }
+
+    .content {
+      margin-left: 250px;
+      min-height: 100vh;
+      background: #fff;
+      
+    }
+
+    .content .navbar {
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .content .navbar .nav-link {
+      margin-left: 25px;
+      padding: 12px 0;
+      color: var(--dark);
+    }
+
+    .card {
+      border: 1px dashed #ccc;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: var(--primary);
+    }
+
+    .table {
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .table thead {
+      background: var(--light);
+      color: var(--dark);
+    }
+
+    .table th, .table td {
+      vertical-align: middle;
+    }
+
+    .btn-upload {
+      background-color: #28a745;
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .file-upload-wrapper {
+      display: inline-block;
+      position: relative;
+    }
+
+    .file-upload-wrapper input[type="file"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .highlight {
+      border-color: #007bff ;
+      background-color: #e6f2ff;
+    }
+
+    .file-names {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .file-names span {
+      display: inline-block;
+      background: #f1f1f1;
+      padding: 5px 10px;
+      border-radius: 15px;
+      margin: 5px 5px 0 0;
+    }
+
+    @media (max-width: 991.98px) {
+      .sidebar {
+        width: 200px;
+      }
+      .content {
+        margin-left: 200px;
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      .sidebar {
+        position: static;
+        width: 100%;
+      }
+      .content {
+        margin-left: 0;
+      }
+    }
+    .custom-file-upload {
+    display: inline-block;
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .custom-file-upload:hover {
+    background-color: #0056b3;
+  }
+
+  input[type="file"] {
+    display: none;
+  }
+  </style>
+</head>
+
+<body>
+<div class="container-fluid position-relative bg-white d-flex p-0">
+  <!-- Sidebar -->
+  <div class="sidebar pe-4 pb-3">
+    <nav class="navbar bg-light navbar-light">
+      <a href="{{ url_for('dashboard') }}" class="navbar-brand mx-4 mb-3 d-flex align-items-center" >
+          <img
+              src="../static/img/wipro.png"
+              alt="Post Call Logo"
+              style="
+                height: 65px;
+                width: auto;
+                margin-right: 10px;
+                border-radius: 60px;
+                margin-left: -20px;
+                margin-top: -10px
+              "
+            />
+
+      <!-- <h3 class="mb-0" style="font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; color: #333;margin-top: 5px; font-size: 35px;">EchoVerge</h3> -->
+      </a>
+      <div class="navbar-nav w-100">
+        <a href="{{ url_for('dashboard') }}" class="nav-item nav-link"><i class="fa fa-list me-2"></i>Dashboard</a>
+        <a href="{{ url_for('upload_audio') }}" class="nav-item nav-link active"><i class="fa fa-upload me-2"></i>Upload</a>
+        <a href="{{ url_for('faq') }}" class="nav-item nav-link"><i class="far fa-file-alt me-2"></i>FAQs</a>
+
+        <a href="https://vqa-live-fbapf3gudhdwgyes.southindia-01.azurewebsites.net/" class="nav-item nav-link" target="_blank"><i class="fa fa-cog me-2"></i>Live board</a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Content -->
+  <div class="content w-100">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+      <div class="navbar-nav align-items-center ms-auto">
+        <!-- <div class="nav-item dropdown">
+          <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fa fa-bell me-2"></i>
+            <span class="d-none d-lg-inline-flex">Notifications</span>
+          </a>
+        </div> -->
+            <div class="nav-item dropdown">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                <button id="notifyBtn" class="btn btn-outline-primary me-3">
+                <i class="fa fa-bell me-2"></i>
+                <span class="d-none d-lg-inline-flex">Send Notification</span>
+                </button>
+          <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                var notifyBtn = document.getElementById('notifyBtn');
+                if (notifyBtn) {
+                  notifyBtn.onclick = function() {
+                    if (confirm("Do you confirm sending a notification email?")) {
+                      fetch('/send_notification_mail', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        }
+                      })
+                      .then(response => response.json())
+                      .then(data => {
+                        if (data.message) {
+                          alert(data.message);
+                        } else {
+                          alert(data.error || "Failed to send email.");
+                        }
+                      })
+                      .catch(() => alert("Error sending email."));
+                    }
+                  }
+                }
+            });
+          </script>
+                <img class="rounded-circle me-2" src="../static/img/logoo.png" alt="Logo" style="width: 40px; height: 40px;">
+                <span class="d-none d-lg-inline-flex" id="username" style="font-weight: bolder;">ECHOVERGE</span>
+                <a href="{{ url_for('team') }}" class="d-none d-lg-inline-flex" style="font-size: 12px; color: #6c757d; text-decoration: none;margin-left: 220px;">Developed by GenAI Foundry</a></a>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end">
+            <div class="dropdown-item" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
+              <div style="font-weight: 600; color: #333;">{{ user.name if user else 'Guest User' }}</div>
+              <div style="font-size: 12px; color: #6c757d;">{{ user.preferred_username if user else '' }}</div>
+            </div>
+            <a href="#" class="dropdown-item">
+              <i class="fas fa-user-circle"></i>Profile
+            </a>
+                            <a href="#" class="dropdown-item">
+                  <i class="fas fa-cog"></i>Settings
+                </a>
+            <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: #dc3545;">
+              <i class="fas fa-sign-out-alt"></i>Logout
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Upload Section -->
+    <div class="container-fluid pt-4 px-4">
+      <div class="row" style="height: 520px; min-height: 350px;">
+        <!-- Left: Upload Section -->
+        <div class="col-md-6 d-flex align-items-stretch">
+          <div class="card mb-4 w-100 d-flex flex-column justify-content-between" style="height: 95%; min-height: 320px;">
+            <div class="card-body text-center d-flex flex-column justify-content-center" style="background-color: #ffffff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; height: 95%; min-height: 300px;">
+              <h3>Upload Call Data</h3>
+              <form method="POST" action="{{ url_for('upload_audio') }}" enctype="multipart/form-data" id="uploadForm">
+                <div id="uploadBox" style="margin-top: 20px; background-color: rgb(241, 237, 237); padding: 20px; border-radius: 10px; border: 2px dashed #ccc; text-align: center; transition: 0.3s; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb;">
+                  <div style="font-size: 14px; color: #888;">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                    <h5><strong>Upload Transcript File</strong></h5>
+                    <p class="text-muted">Drag and drop files here, or click to browse</p>
+                    <label for="transcript_file" class="custom-file-upload">Choose Transcript File</label>
+                    <input type="file" id="transcript_file" name="transcript_file" accept=".txt" required>
+                    <br><br>
+                    <div style="display: flex; justify-content: center; gap: 32px;">
+                      <div>
+                        <label for="audio_file_agent" class="custom-file-upload">Choose Agent Audio File</label>
+                        <input type="file" id="audio_file_agent" name="audio_file_agent" accept="audio/*" required>
+                      </div>
+                      <div>
+                        <label for="audio_file_employee" class="custom-file-upload">Choose Employee Audio File</label>
+                        <input type="file" id="audio_file_employee" name="audio_file_employee" accept="audio/*" required>
+                      </div>
+                    </div>
+                    <div class="file-names mt-2" id="fileNames"></div>
+                    <div id="audioPreview"></div>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <div style="display: flex; justify-content: center; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" style="padding: 10px 25px; font-size: 16px;">Upload</button>
+                  </div>
+                  <div id="uploadSpinner" style="display:none; margin-top:20px; text-align:center;">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                      <span class="visually-hidden">Uploading...</span>
+                    </div>
+                    <div style="margin-top:8px; color:#007bff; font-weight:500;">Processing, please wait...</div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- Right: Sync Section -->
+        <div class="col-md-6 d-flex align-items-stretch">
+          <div class="card mb-4 w-100 d-flex flex-column justify-content-between" style="height: 95%; min-height: 320px;font-size: 15px;">
+            <div class="card-body d-flex flex-column justify-content-center align-items-center" style="padding-top:0px;margin-top: 0px;background-color: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; height: 95%; min-height: 300px;">
+              <h3>Sync & Controls</h3>
+              <div style="margin-top: 20px; background-color: rgb(241, 237, 237); padding: 20px; border-radius: 10px; border: 2px dashed #ccc; text-align: center; transition: 0.3s; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; width: 100%;">
+                
+                <!-- Sync from Cloud Button -->
+                <div style="text-align:center; margin-top:20px; width:100%;">
+                  <form id="cloudSyncForm" method="POST" action="{{ url_for('sync_cloud') }}" style="display:inline-block;">
+                    <button type="submit" class="btn btn-primary">Sync from Cloud</button>
+                  </form>
+                  <div id="cloudSyncSpinner" style="display:none; margin-top:10px; text-align:center;">
+                    <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+                      <span class="visually-hidden">Syncing...</span>
+                    </div>
+                    <div style="margin-top:8px; color:#007bff; font-weight:500;">Syncing cloud files, please wait...</div>
+                  </div>
+                  <button id="localSyncBtn" class="btn btn-primary ms-2">Sync from Local</button>
+                  <div id="localSyncSpinner" style="display:none; margin-top:10px; text-align:center;">
+                    <div class="spinner-border text-secondary" role="status" style="width: 2.5rem; height: 2.5rem;">
+                      <span class="visually-hidden">Syncing...</span>
+                    </div>
+                    <div style="margin-top:8px; color:#6c757d; font-weight:500;">Syncing local files, please wait...</div>
+                  </div>
+                </div>
+                <!-- Sync Interval Control -->
+                <div style="text-align:center; margin-top:20px; width:100%;">
+                  <label for="syncIntervalSelect" style="font-weight:500; margin-right:8px;">Local Sync Interval:</label>
+                  <select id="syncIntervalSelect" class="form-select d-inline-block" style="width:120px; display:inline-block;">
+                    <option value="1">1 min</option>
+                    <option value="5">5 min</option>
+                    <option value="10">10 min</option>
+                    <option value="30">30 min</option>
+                    <option value="60">60 min</option>
+                  </select>
+                  <button id="setSyncIntervalBtn" type="button" class="btn btn-success">Set Sync Interval</button>
+                  <span id="syncIntervalStatus" style="margin-left:12px; color:#198754; font-weight:500; "></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  const uploadBox = document.getElementById('uploadBox');
+  const transcriptInput = document.getElementById('transcript_file');
+  const audioInputAgent = document.getElementById('audio_file_agent');
+  const audioInputEmployee = document.getElementById('audio_file_employee');
+  const fileNames = document.getElementById('fileNames');
+  const audioPreview = document.getElementById('audioPreview');
+
+  // Drag and drop highlight
+  uploadBox.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    uploadBox.classList.add('highlight');
+  });
+
+  uploadBox.addEventListener('dragleave', function (e) {
+    uploadBox.classList.remove('highlight');
+  });
+
+  uploadBox.addEventListener('drop', function (e) {
+    e.preventDefault();
+    uploadBox.classList.remove('highlight');
+    const dt = e.dataTransfer;
+    // Assign files to correct inputs by type
+    for (let i = 0; i < dt.files.length; i++) {
+      if (dt.files[i].type.startsWith('audio/')) {
+        const audioDT = new DataTransfer();
+        audioDT.items.add(dt.files[i]);
+        if (audioInputAgent.files.length === 0) {
+          audioInputAgent.files = audioDT.files;
+        } else {
+          audioInputEmployee.files = audioDT.files;
+        }
+      } else if (dt.files[i].name.endsWith('.txt')) {
+        const txtDT = new DataTransfer();
+        txtDT.items.add(dt.files[i]);
+        transcriptInput.files = txtDT.files;
+      }
+    }
+    showFileNames();
+  });
+
+  transcriptInput.addEventListener('change', showFileNames);
+  audioInputAgent.addEventListener('change', showFileNames);
+  audioInputEmployee.addEventListener('change', showFileNames);
+
+  function showFileNames() {
+    let html = '';
+    // Transcript file name
+    if (transcriptInput.files.length > 0) {
+      html += `<span>${transcriptInput.files[0].name}</span>`;
+    }
+    // Agent audio file name and preview
+    if (audioInputAgent.files.length > 0) {
+      html += `<span>${audioInputAgent.files[0].name}</span>`;
+    }
+    // Employee audio file name and preview
+    if (audioInputEmployee.files.length > 0) {
+      html += `<span>${audioInputEmployee.files[0].name}</span>`;
+      audioPreview.innerHTML = `<audio controls style="margin-top:8px;max-width:300px;">
+        <source src="${URL.createObjectURL(audioInputEmployee.files[0])}">
+        Your browser does not support the audio element.
+      </audio>`;
+    } else {
+      audioPreview.innerHTML = '';
+    }
+    fileNames.innerHTML = html;
+  }
+
+  // // User dropdown functionality
+  // function toggleUserDropdown() {
+  //   const dropdown = document.getElementById('userDropdownMenu');
+  //   dropdown.classList.toggle('show');
+  // }
+
+  // // Close dropdown when clicking outside
+  // document.addEventListener('click', function(event) {
+  //   const userDropdown = document.querySelector('.user-dropdown');
+  //   const dropdown = document.getElementById('userDropdownMenu');
+  //   if (userDropdown && dropdown && !userDropdown.contains(event.target)) {
+  //     dropdown.classList.remove('show');
+  //   }
+  // });
+
+  // Show spinner on upload
+  document.getElementById('uploadForm').addEventListener('submit', function() {
+    document.getElementById('uploadSpinner').style.display = '';
+  });
+
+  // Local Sync Button Handler
+  const localSyncBtn = document.getElementById('localSyncBtn');
+  const localSyncSpinner = document.getElementById('localSyncSpinner');
+  if (localSyncBtn) {
+    localSyncBtn.addEventListener('click', function() {
+      localSyncBtn.disabled = true;
+      localSyncSpinner.style.display = '';
+      fetch('{{ url_for('sync_local') }}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => {
+        localSyncBtn.disabled = false;
+        localSyncSpinner.style.display = 'none';
+        if (response.ok) {
+          location.reload();
+        } else {
+          response.text().then(text => alert('Local sync failed: ' + text));
+        }
+      })
+      .catch(err => {
+        localSyncBtn.disabled = false;
+        localSyncSpinner.style.display = 'none';
+        alert('Local sync error: ' + err);
+      });
+    });
+  }
+
+  // Cloud Sync Form Handler
+  const cloudSyncForm = document.getElementById('cloudSyncForm');
+  const cloudSyncSpinner = document.getElementById('cloudSyncSpinner');
+  if (cloudSyncForm) {
+    cloudSyncForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      cloudSyncSpinner.style.display = '';
+      const formData = new FormData(cloudSyncForm);
+      fetch(cloudSyncForm.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => {
+        cloudSyncSpinner.style.display = 'none';
+        if (response.ok) {
+          location.reload();
+        } else {
+          response.text().then(text => alert('Cloud sync failed: ' + text));
+        }
+      })
+      .catch(err => {
+        cloudSyncSpinner.style.display = 'none';
+        alert('Cloud sync error: ' + err);
+      });
+    });
+  }
+
+  // --- Sync Interval Control ---
+  const setSyncIntervalBtn = document.getElementById('setSyncIntervalBtn');
+  const syncIntervalSelect = document.getElementById('syncIntervalSelect');
+  const syncIntervalStatus = document.getElementById('syncIntervalStatus');
+  // Fetch and display current interval on page load
+  fetch('/get_sync_status', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.interval) {
+        syncIntervalSelect.value = data.interval;
+        syncIntervalStatus.textContent = `Current: ${data.interval} min${data.interval > 1 ? 's' : ''}`;
+      }
+      if (data && data.running === false) {
+        syncIntervalStatus.textContent += ' (Not running)';
+      }
+    });
+  if (setSyncIntervalBtn && syncIntervalSelect) {
+    setSyncIntervalBtn.addEventListener('click', function() {
+      setSyncIntervalBtn.disabled = true;
+      const minutes = parseInt(syncIntervalSelect.value);
+      fetch('/set_sync_interval', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ minutes })
+      })
+      .then(response => response.json())
+      .then(data => {
+        setSyncIntervalBtn.disabled = false;
+        if (data.status === 'success') {
+          syncIntervalStatus.textContent = `Interval set to ${data.interval} min${data.interval > 1 ? 's' : ''}`;
+          setTimeout(() => { syncIntervalStatus.textContent = ''; }, 3000);
+        } else {
+          syncIntervalStatus.textContent = 'Failed to set interval';
+        }
+      })
+      .catch(err => {
+        setSyncIntervalBtn.disabled = false;
+        syncIntervalStatus.textContent = 'Error setting interval';
+      });
+    });
+  }
+</script>
+
+</body>
+</html>

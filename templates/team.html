@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!--Font Awesome CDN-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <title>Team Section</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,300&family=Poppins:wght@300&display=swap');
+              /* Custom Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 10px;
+        background: var(--light);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 8px;
+        border: 2px solid #f8f9fa;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #b0b8c1;
+      }
+      /* For Firefox */
+      html {
+        scrollbar-color: #d1d5db #f8f9fa;
+        scrollbar-width: thin;
+      }
+      /* Optional: FAQ section specific (if needed) */
+      .faq-section {
+        scrollbar-color: #d1d5db #f8f9fa;
+        scrollbar-width: thin;
+      }
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    background: linear-gradient(120deg, #e3f0fc 0%, #f8fbff 100%);
+    min-height: 100vh;
+}
+
+.main{
+    margin: 10px;
+}
+
+.main .title{
+    font-size: 50px;
+    margin-bottom: 5px;
+    text-align: center;
+    color: #2a4365;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: none;
+    position: relative;
+}
+.main .title-underline {
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, #4d5bff 0%, #6bc8f6 100%);
+    margin: 0 auto 20px auto;
+    border-radius: 2px;
+}
+
+.main .card_container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.card_container .card{
+    max-width: 450px;
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 50px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #1e293b 0%, #6bc8f6 100%);
+    border: 0.5px solid #f1f5f9;
+    padding: 15px;
+    color: #f1f5f9;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(77,91,255,0.15), 0 1.5px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.card_container .card:hover {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 16px 32px rgba(77,91,255,0.25), 0 2px 12px rgba(0,0,0,0.12);
+}
+
+.user_content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.user_content .name{
+    font-size: 25px;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    color: #fff;
+    letter-spacing: 1px;
+} 
+
+.user_content .post{
+    font-size: 20px;
+    color: #ffd700;
+    margin: 15px 0;
+    font-weight: 400;
+    font-family: 'Nunito Sans', sans-serif;
+    position: relative;
+    left: 0;
+    display: inline-block;
+}
+
+.star {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.fa-solid{
+    color: #ffc107;
+}
+
+.transparent{
+    color: transparent;
+}
+
+.user_content .about{
+    color: #e0e7ef;
+    font-family: 'Poppins', sans-serif;
+    margin-top: 10px;
+    font-size: 18px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.card .round_box{
+    position: absolute;
+    top: -20%;
+    right: 10%;
+    background: linear-gradient(135deg, #4d5bff 0%, #6bc8f6 100%) !important;
+    width: 130px;
+    height: 130px;
+    border: 1px solid #f1f5f9;
+    border-radius: 50%;
+    z-index: 333;
+    opacity: 0.7;
+}
+
+.card .img_box{
+    position: absolute;
+    top: -20%;
+    right: 10%;
+    z-index: 555;
+}
+
+.card .img_box img{
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    padding: 10px;
+    box-shadow: 0 4px 16px rgba(77,91,255,0.18);
+    background: #fff;
+}
+
+.card .squareBox{
+    height: 90px;
+    width: 136px;
+    background: linear-gradient(135deg, #6bc8f6 0%, #4d5bff 100%);
+    position: absolute;
+    top: 0;
+    right: 9%;
+    z-index: 444;
+    opacity: 0.5;
+}
+    </style>
+</head>
+<body>
+    
+    <div class="main">
+        <div class="title">Our Team</div>
+        <div class="title-underline"></div>
+
+        <div class="card_container">
+
+            <div class="card">
+                
+
+                <div class="user_content">
+                    <h5 class="name">Adarsh T R</h5>
+                    <p class="post">Engineering Head</p>
+
+                    
+                    <p class="about">Leads with strong vision and a passion for scalable systems. With over 20+ years' experience, he aligns business goals with technical excellence, mentors engineering teams, and consistently drives innovation and growth.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                
+
+                <div class="user_content">
+                    <h5 class="name">Ravi Shankar A V</h5>
+                    <p class="post">Consultant</p>
+
+                    
+                    <p class="about">An experienced and trusted consultant with deep domain knowledge and strategic insight. Ravi brings clarity to complex problems, advises on critical decisions, and empowers teams to deliver impactful, scalable, and sustainable business solutions.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                
+
+                <div class="user_content">
+                    <h5 class="name">Irul Mathi</h5>
+                    <p class="post">Senior Engineer</p>
+
+                    
+                    <p class="about">An innovative AI engineer with a sharp problem-solving mindset. Irul specializes in machine learning and intelligent systems, driving impactful solutions through data-driven models, automation, and scalable AI-powered technologies across various domains.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                
+
+                <div class="user_content">
+                    <h5 class="name">Jabin Shalom Selvanson</h5>
+                    <p class="post">Senior Software Engineer</p>
+
+                    
+                    <p class="about">A reliable and versatile engineer, Jabin builds robust, scalable software solutions. With strong expertise in full-stack development, he ensures clean architecture, optimized performance, and seamless user experiences across modern platforms and technologies.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                
+
+                <div class="user_content">
+                    <h5 class="name">Lokesh Prakasam</h5>
+                    <p class="post">Developer</p>
+
+                    
+                    <p class="about">A GenAI enthusiast skilled in fine-tuning large language models. Lokesh focuses on optimizing performance, alignment, and output quality, enabling intelligent, adaptive systems tailored for diverse business needs and conversational AI solutions.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                
+
+                <div class="user_content">
+                    <h5 class="name">Ajay Raj M</h5>
+                    <p class="post">Developer</p>
+
+                    
+                    <p class="about">Specializes in tone-based machine learning for generative AI systems. Ajay brings precision in crafting emotionally aware models that adapt responses based on sentiment, improving natural interaction and user engagement across various applications.</p>
+                </div>
+            </div>
+            <div class="card">
+                
+
+                <div class="user_content">
+                    <h5 class="name">Sai Subhash M</h5>
+                    <p class="post">Developer</p>
+
+                    
+                    <p class="about">Focused on context-based generative models, Sai builds intelligent systems that understand nuanced input and maintain coherence across conversations. He ensures context retention, relevance, and fluidity in real-world AI-driven communication flows.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
