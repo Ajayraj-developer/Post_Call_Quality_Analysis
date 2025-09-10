@@ -1,45 +1,59 @@
-from Cloud_sync.cloudsync import authenticate_google_drive, list_files_in_folder, download_file
+
 import os
+import io
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
 
-def sync_call_from_cloud(folder_id, call_id, download_dir):
+def sync_all_calls_from_cloud(service_account_json, folder_id, download_dir):
     """
-    Downloads transcript and audio files for a given call_id from Google Drive.
-    Returns a dict with file paths for transcript, agent audio, and employee audio.
+    Syncs all call sets (transcript + agent + emp audio) from a Google Drive folder.
+    Downloads files to download_dir and returns a list of dicts for each call set.
     """
-    service = authenticate_google_drive()
-    files = list_files_in_folder(service, folder_id)
-    needed = [f"{call_id}.txt", f"{call_id}_agent.wav", f"{call_id}_emp.wav"]
-    downloaded = {}
-    for file in files:
-        if file['name'] in needed:
-            path = download_file(service, file['id'], file['name'], download_dir)
-            downloaded[file['name']] = path
-    # Return dict with keys: transcript, agent_audio, emp_audio
-    return {
-        'transcript': downloaded.get(f"{call_id}.txt"),
-        'agent_audio': downloaded.get(f"{call_id}_agent.wav"),
-        'emp_audio': downloaded.get(f"{call_id}_emp.wav")
-    }
+    # Authenticate with Google Drive
+    creds = service_account.Credentials.from_service_account_file(service_account_json, scopes=["https://www.googleapis.com/auth/drive"])
+    service = build('drive', 'v3', credentials=creds)
 
-def sync_latest_call_from_cloud(folder_id, download_dir):
-    """
-    Downloads the latest transcript and audio files from a given folder_id in Google Drive.
-    Assumes the latest call is the one with the highest numeric value in the transcript filename.
-    Returns a dict with file paths for transcript, agent audio, and employee audio, and the base name of the latest call.
-    """
-    service = authenticate_google_drive()
-    files = list_files_in_folder(service, folder_id)
-    # Filter for .txt files (transcripts) and sort by name (assuming latest has highest number)
-    transcript_files = [f for f in files if f['name'].endswith('.txt')]
-    if not transcript_files:
-        return None
-    # Sort by numeric part of filename (e.g., 271103.txt)
-    transcript_files.sort(key=lambda x: int(x['name'].split('.')[0]), reverse=True)
-    latest_base = transcript_files[0]['name'].split('.')[0]
-    needed = [f"{latest_base}.txt", f"{latest_base}_agent.wav", f"{latest_base}_emp.wav"]
-    downloaded = {}
-    for file in files:
-        if file['name'] in needed:
-            path = download_file(service, file['id'], file['name'], download_dir)
-            downloaded[file['name']] = path
-    return downloaded, latest_base
+    # List all files in the folder
+    query = f"'{folder_id}' in parents and trashed = false"
+    files = []
+    page_token = None
+    while True:
+        response = service.files().list(q=query, fields="nextPageToken, files(id, name)", pageToken=page_token).execute()
+        files.extend(response.get('files', []))
+        page_token = response.get('nextPageToken', None)
+        if page_token is None:
+            break
+
+    # Group files by call_id
+    calls = {}
+    for f in files:
+        name = f['name']
+        if name.endswith('.txt'):
+            base = name.split('.')[0]
+            calls.setdefault(base, {})['transcript'] = f
+        elif name.endswith('_agent.wav'):
+            base = name.replace('_agent.wav', '')
+            calls.setdefault(base, {})['agent_audio'] = f
+        elif name.endswith('_emp.wav'):
+            base = name.replace('_emp.wav', '')
+            calls.setdefault(base, {})['emp_audio'] = f
+
+    results = []
+    for call_id, file_set in calls.items():
+        if 'transcript' in file_set and 'agent_audio' in file_set and 'emp_audio' in file_set:
+            downloaded = {}
+            for key in ['transcript', 'agent_audio', 'emp_audio']:
+                file_info = file_set[key]
+                file_id = file_info['id']
+                file_name = file_info['name']
+                file_path = os.path.join(download_dir, file_name)
+                request = service.files().get_media(fileId=file_id)
+                fh = io.FileIO(file_path, 'wb')
+                downloader = MediaIoBaseDownload(fh, request)
+                done = False
+                while not done:
+                    status, done = downloader.next_chunk()
+                downloaded[key] = file_path
+            results.append({'call_id': call_id, **downloaded})
+    return results

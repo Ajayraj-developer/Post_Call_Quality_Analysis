@@ -7,7 +7,7 @@ import os
 from analytics import PROMPTS, generate_section
 from emotion_inference import calculate_average_speech_rate, get_calm_score, get_vad_over_time
 from context_based import get_agent_employee_sentiment, parse_transcript_lines, get_sentiment_flow
-from cloud import sync_latest_call_from_cloud
+
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
@@ -541,191 +541,148 @@ def sync_cloud():
     folder_id = '1F5JG1JCG94Pkuj5CPsevbk1x_BqWg5vJ'  # TODO: move to config if needed
     download_dir = os.path.join('Cloud_sync', 'downloaded_transcripts')
     os.makedirs(download_dir, exist_ok=True)
-    files, call_id = sync_latest_call_from_cloud(folder_id, download_dir)
-    if not files:
-        return "No call files found in cloud folder.", 404
+    service_account_json = os.path.join('Cloud_sync', 'credentials.json')  # Path to your service account JSON
 
-    # Get file paths
-    transcript_path = files.get(f"{call_id}.txt")
-    agent_audio_path = files.get(f"{call_id}_agent.wav")
-    emp_audio_path = files.get(f"{call_id}_emp.wav")
-    if not (transcript_path and agent_audio_path and emp_audio_path):
-        return "Could not find all required files for the latest call.", 400
-
-    # Read transcript
-    with open(transcript_path, 'r', encoding='utf-8') as f:
-        transcript = f.read()
-    transcript_msgs = parse_transcript_lines(transcript)
-    sentiment_scores = get_agent_employee_sentiment(transcript_msgs)
-    agent_sentiment_percent = sentiment_scores['agent_sentiment_percent']
-    employee_sentiment_percent = sentiment_scores['employee_sentiment_percent']
-
-    analysis = {}
-    if transcript.strip():
-        for section, prompt in PROMPTS.items():
-            result = generate_section(prompt, transcript)
-            if result:
-                analysis[section] = result
-            else:
-                analysis[section] = {"error": f"Failed to parse {section} output"}
-
-    avg_speech_rate_agent, segment_times_agent, segment_zcrs_agent = calculate_average_speech_rate(agent_audio_path)
-    avg_speech_rate_employee, segment_times_employee, segment_zcrs_employee = calculate_average_speech_rate(emp_audio_path)
-    mixed_audio_path = None  # Not available from cloud, fallback to agent audio
-    calm_score = get_calm_score(agent_audio_path)
-    vad_times, valence_list, arousal_list, dominance_list = get_vad_over_time(agent_audio_path)
-    sentiment_flow = get_sentiment_flow(transcript_msgs)
-
-    context_score = (agent_sentiment_percent + employee_sentiment_percent) / 2 / 10 if agent_sentiment_percent is not None and employee_sentiment_percent is not None else 0
-    tone_score = calm_score if calm_score is not None else 0
-    sop_score = 0
-    if analysis.get('sop_adherence'):
-        sop = analysis['sop_adherence']
-        sop_steps = [sop.get('identity_verification'), sop.get('security_questions'), sop.get('two_factor_enabled'), sop.get('account_activity_review'), sop.get('security_best_practices')]
-        sop_score = (sum(1 for s in sop_steps if s) / 5) * 1
-    agent_score = agent_sentiment_percent / 100 if agent_sentiment_percent is not None else 0
-    resolved_score = 0
-    if analysis.get('call_summary') and analysis['call_summary'].get('resolved'):
-        resolved_score = 1 if str(analysis['call_summary']['resolved']).strip().lower() == 'yes' else 0
-    overall_score = (
-        0.4 * context_score +
-        0.3 * tone_score +
-        1.0 * sop_score +
-        1.0 * agent_score +
-        1.0 * resolved_score
-    )
-
-    # Calculate duration (in seconds) for agent audio (as a proxy for call duration)
-    import wave
-    def get_audio_duration(filepath):
+    from cloud import sync_all_calls_from_cloud
+    results = sync_all_calls_from_cloud(service_account_json, folder_id, download_dir)
+    processed = 0
+    errors = []
+    for call in results:
         try:
-            with wave.open(filepath, 'rb') as wf:
-                frames = wf.getnframes()
-                rate = wf.getframerate()
-                return round(frames / float(rate), 2)
-        except Exception:
-            return None
-    duration = get_audio_duration(agent_audio_path)
-
-    # Extract department and topic from analysis if available
-    department = None
-    topic = None
-    if analysis.get('call_summary'):
-        department = analysis['call_summary'].get('department')
-        topic = analysis['call_summary'].get('topic')
-
-    # Extract agent name from transcript using extract_agent_name logic from new_app.py
-    def extract_agent_name(transcript):
-        try:
-            lines = transcript.splitlines()
-            for line in lines:
-                if 'Agent' in line:
-                    parts = line.split('Agent')
-                    if len(parts) > 1:
-                        name_part = parts[1].strip('():- ')
-                        return name_part.split()[0]  # just the name
-        except:
-            pass
-        return "Unknown"
-    agent_name = extract_agent_name(transcript)
-
-    # Extract timestamps from transcript (first and last timestamp for call duration)
-    dash_chars = r"[-–—‒−]"
-    timestamps = []
-    for line in transcript.splitlines():
-        match = re.match(r"(\d{2}:\d{2}:\d{2})\s*" + dash_chars, line)
-        if match:
-            timestamps.append(match.group(1))
-    call_start = timestamps[0] if timestamps else datetime.utcnow().strftime('%H:%M:%S')
-    call_end = timestamps[-1] if len(timestamps) > 1 else None
-
-    # Extract 6-digit call id from agent audio or employee audio filename
-    call_id_val = None
-    match = re.search(r"(\d{6})", os.path.basename(agent_audio_path))
-    if not match:
-        match = re.search(r"(\d{6})", os.path.basename(emp_audio_path))
-    if match:
-        call_id_val = match.group(1)
-    else:
-        call_id_val = "N/A"
-
-    # Avoid duplicate import: check if already in DB by call_id
-    if call_id_val != "N/A" and calls_collection.find_one({"call_id": call_id_val}):
-        print(f"[CLOUD SYNC] Skipping duplicate set by call_id: {call_id_val}")
-        return jsonify({"status": "duplicate", "call_id": call_id_val}), 200
-
-    # Save all analysis and metadata to MongoDB (just like manual upload)
-    doc = {
-        "agent_audio": os.path.basename(agent_audio_path),
-        "employee_audio": os.path.basename(emp_audio_path),
-        "transcript": transcript,
-        "analysis": analysis,
-        "segment_times_agent": segment_times_agent,
-        "segment_zcrs_agent": segment_zcrs_agent,
-        "segment_times_employee": segment_times_employee,
-        "segment_zcrs_employee": segment_zcrs_agent,
-        "avg_speech_rate": avg_speech_rate_agent,
-        "calm_score": calm_score,
-        "vad_times": vad_times,
-        "valence_list": valence_list,
-        "arousal_list": arousal_list,
-        "dominance_list": dominance_list,
-        "agent_sentiment_percent": agent_sentiment_percent,
-        "employee_sentiment_percent": employee_sentiment_percent,
-        "sentiment_flow": sentiment_flow,
-        "overall_score": overall_score,
-        "duration": duration,
-        "department": department,
-        "topic": topic,
-        "agent_name": agent_name,
-        "call_id": call_id_val,
-        "user_name": session.get("user", {}).get("name", "Unknown"),
-        "user_email": session.get("user", {}).get("preferred_username", ""),
-        "created_at": datetime.utcnow(),
-        "call_start": call_start,
-        "call_end": call_end
-    }
-    try:
-        calls_collection.insert_one(doc)
-    except Exception as e:
-        if 'duplicate key error' in str(e):
-            print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
-        else:
-            print(f"[ERROR] Exception inserting doc: {e}")
-            errors = []
-            errors.append(f"Error inserting doc: {str(e)}")
-
-    # Delete synced files from downloaded_transcripts folder
-    for f in [transcript_path, agent_audio_path, emp_audio_path]:
-        try:
-            if f and os.path.exists(f):
-                os.remove(f)
-                print(f"[CLOUD SYNC] Deleted file: {f}")
+            transcript_path = call['transcript']
+            agent_audio_path = call['agent_audio']
+            emp_audio_path = call['emp_audio']
+            call_id_val = call['call_id']
+            # Avoid duplicate import: check if already in DB by call_id
+            if call_id_val and calls_collection.find_one({"call_id": call_id_val}):
+                print(f"[CLOUD SYNC] Skipping duplicate set by call_id: {call_id_val}")
+                continue
+            with open(transcript_path, 'r', encoding='utf-8') as f:
+                transcript = f.read()
+            transcript_msgs = parse_transcript_lines(transcript)
+            sentiment_scores = get_agent_employee_sentiment(transcript_msgs)
+            agent_sentiment_percent = sentiment_scores['agent_sentiment_percent']
+            employee_sentiment_percent = sentiment_scores['employee_sentiment_percent']
+            analysis = {}
+            if transcript.strip():
+                for section, prompt in PROMPTS.items():
+                    result = generate_section(prompt, transcript)
+                    if result:
+                        analysis[section] = result
+                    else:
+                        analysis[section] = {"error": f"Failed to parse {section} output"}
+            avg_speech_rate_agent, segment_times_agent, segment_zcrs_agent = calculate_average_speech_rate(agent_audio_path)
+            avg_speech_rate_employee, segment_times_employee, segment_zcrs_employee = calculate_average_speech_rate(emp_audio_path)
+            calm_score = get_calm_score(agent_audio_path)
+            vad_times, valence_list, arousal_list, dominance_list = get_vad_over_time(agent_audio_path)
+            sentiment_flow = get_sentiment_flow(transcript_msgs)
+            context_score = (agent_sentiment_percent + employee_sentiment_percent) / 2 / 10 if agent_sentiment_percent is not None and employee_sentiment_percent is not None else 0
+            tone_score = calm_score if calm_score is not None else 0
+            sop_score = 0
+            if analysis.get('sop_adherence'):
+                sop = analysis['sop_adherence']
+                sop_steps = [sop.get('identity_verification'), sop.get('security_questions'), sop.get('two_factor_enabled'), sop.get('account_activity_review'), sop.get('security_best_practices')]
+                sop_score = (sum(1 for s in sop_steps if s) / 5) * 1
+            agent_score = agent_sentiment_percent / 100 if agent_sentiment_percent is not None else 0
+            resolved_score = 0
+            if analysis.get('call_summary') and analysis['call_summary'].get('resolved'):
+                resolved_score = 1 if str(analysis['call_summary']['resolved']).strip().lower() == 'yes' else 0
+            overall_score = (
+                0.4 * context_score +
+                0.3 * tone_score +
+                1.0 * sop_score +
+                1.0 * agent_score +
+                1.0 * resolved_score
+            )
+            def get_audio_duration(filepath):
+                try:
+                    from pydub import AudioSegment
+                    audio = AudioSegment.from_file(filepath)
+                    return round(len(audio) / 1000, 2)
+                except Exception:
+                    return None
+            duration = get_audio_duration(agent_audio_path)
+            department = None
+            topic = None
+            if analysis.get('call_summary'):
+                department = analysis['call_summary'].get('department')
+                topic = analysis['call_summary'].get('topic')
+            def extract_agent_name(transcript):
+                try:
+                    lines = transcript.splitlines()
+                    for line in lines:
+                        if 'Agent' in line:
+                            parts = line.split('Agent')
+                            if len(parts) > 1:
+                                name_part = parts[1].strip('():- ')
+                                return name_part.split()[0]
+                except:
+                    pass
+                return "Unknown"
+            agent_name = extract_agent_name(transcript)
+            dash_chars = r"[-–—‒−]"
+            timestamps = []
+            for line in transcript.splitlines():
+                match = re.match(r"(\d{2}:\d{2}:\d{2})\s*" + dash_chars, line)
+                if match:
+                    timestamps.append(match.group(1))
+            call_start = timestamps[0] if timestamps else datetime.utcnow().strftime('%H:%M:%S')
+            call_end = timestamps[-1] if len(timestamps) > 1 else None
+            doc = {
+                "agent_audio": os.path.basename(agent_audio_path),
+                "employee_audio": os.path.basename(emp_audio_path),
+                "transcript": transcript,
+                "analysis": analysis,
+                "segment_times_agent": segment_times_agent,
+                "segment_zcrs_agent": segment_zcrs_agent,
+                "segment_times_employee": segment_times_employee,
+                "segment_zcrs_employee": segment_zcrs_employee,
+                "avg_speech_rate": avg_speech_rate_agent,
+                "calm_score": calm_score,
+                "vad_times": vad_times,
+                "valence_list": valence_list,
+                "arousal_list": arousal_list,
+                "dominance_list": dominance_list,
+                "agent_sentiment_percent": agent_sentiment_percent,
+                "employee_sentiment_percent": employee_sentiment_percent,
+                "sentiment_flow": sentiment_flow,
+                "overall_score": overall_score,
+                "duration": duration,
+                "department": department,
+                "topic": topic,
+                "agent_name": agent_name,
+                "call_id": call_id_val,
+                "user_name": session.get("user", {}).get("name", "Unknown"),
+                "user_email": session.get("user", {}).get("preferred_username", ""),
+                "created_at": datetime.utcnow(),
+                "call_start": call_start,
+                "call_end": call_end
+            }
+            try:
+                calls_collection.insert_one(doc)
+                processed += 1
+            except Exception as e:
+                if 'duplicate key error' in str(e):
+                    print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
+                else:
+                    print(f"[ERROR] Exception inserting doc: {e}")
+                    errors.append(f"Error inserting doc: {str(e)}")
+            # Optionally delete files after sync
+            for f in [transcript_path, agent_audio_path, emp_audio_path]:
+                try:
+                    if f and os.path.exists(f):
+                        os.remove(f)
+                        print(f"[CLOUD SYNC] Deleted file: {f}")
+                except Exception as e:
+                    print(f"[CLOUD SYNC][ERROR] Could not delete file {f}: {e}")
         except Exception as e:
-            print(f"[CLOUD SYNC][ERROR] Could not delete file {f}: {e}")
-
-    return render_template(
-        'new.html',
-        transcript=transcript,
-        analysis=analysis,
-        audio_file_agent=os.path.basename(agent_audio_path),
-        audio_file_employee=os.path.basename(emp_audio_path),
-        segment_times_agent=segment_times_agent,
-        segment_zcrs_agent=segment_zcrs_agent,
-        segment_times_employee=segment_times_employee,
-        segment_zcrs_employee=segment_zcrs_agent,
-        avg_speech_rate=avg_speech_rate_agent,
-        calm_score=calm_score,
-        vad_times=vad_times,
-        valence_list=valence_list,
-        arousal_list=arousal_list,
-        dominance_list=dominance_list,
-        agent_sentiment_percent=agent_sentiment_percent,
-        employee_sentiment_percent=employee_sentiment_percent,
-        sentiment_flow=sentiment_flow,
-        overall_score=overall_score,
-        user=session.get("user"),
-    )
+            print(f"[CLOUD SYNC][ERROR] Exception processing call {call.get('call_id', 'N/A')}: {e}")
+            errors.append(f"Error processing call {call.get('call_id', 'N/A')}: {str(e)}")
+    if errors:
+        print(f"[CLOUD SYNC] Errors encountered: {errors}")
+        return jsonify({"status": "error", "processed": processed, "errors": errors}), 500
+    print(f"[CLOUD SYNC] Cloud sync complete. {processed} new calls imported.")
+    return jsonify({"status": "success", "processed": processed}), 200
 
 @app.route('/call/<call_id>')
 @login_required
@@ -1052,7 +1009,7 @@ client = MongoClient(
     tlsCAFile=certifi.where()  # <— give OpenSSL an up‑to‑date CA bundle
 )
 db = client["post_call"]
-calls_collection = db["calls"]
+calls_collection = db["call_data"]
 
 # Ensure unique index on call_id for hard deduplication
 try:
