@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Voice Quality Analysis</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,600,700">
+    <style>
+        /* Sidebar navigation item enhancements */
+        .sidebar nav ul li a {
+            font-size: 1.18rem !important;
+            font-weight: 700 !important;
+        }
+             /* Custom Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 10px;
+        background: var(--light);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 8px;
+        border: 2px solid #f8f9fa;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #b0b8c1;
+      }
+      /* For Firefox */
+      html {
+        scrollbar-color: #d1d5db #f8f9fa;
+        scrollbar-width: thin;
+      }
+        html, body, input, select, button, textarea, .panel, .panel-title, .card, .card-title, .card-value, .card-trend, .legend, .perf-label, .perf-bar, .sentiment-list, .sentiment-icon, .user-info, .user-details, .user-name, .user-role, .header-title, .header-icon, .summary-cards, .main-content, .container, .perf-bar-bg, .performance-list, .filter-label, .filter-select, .filter-btn, .filter-reset {
+            font-family: 'Inter', Arial, sans-serif !important;
+            letter-spacing: 0;
+        }
+        body {
+            background: #fafbfc;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 32px 12px 32px;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .logo {
+            width: 38px;
+            height: 38px;
+            background: #e6f0ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 14px;
+        }
+        .logo span {
+            font-size: 28px;
+            color: #3498fd;
+            font-weight: bold;
+        }
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #222;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .header-icon {
+            font-size: 20px;
+            color: #b0b6be;
+            margin-right: 8px;
+            position: relative;
+        }
+        .header-icon .badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #3498fd;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 10px;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: #f0f2f5;
+            border-radius: 50%;
+        }
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .user-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .user-role {
+            font-size: 0.85rem;
+            color: #b0b6be;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 32px auto;
+            padding: 0 24px;
+        }
+        .summary-cards {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(52, 152, 253, 0.04);
+            padding: 20px 28px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            min-width: 180px;
+            position: relative;
+            gap: 18px;
+            justify-content: space-between;
+        }
+        .card-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
+        }
+        .card-title {
+            font-size: 1rem;
+            color: #7b7f87;
+            margin-bottom: 2px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-value-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+        .card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #222;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .card-trend {
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 2px 12px;
+            background: #e6f9f0;
+            color: #1abc9c;
+            margin-left: 0;
+            position: absolute;
+            right: 8px;
+            /* Lower the trend badge further below the vertical center */
+            top: 45%;
+            transform: translateY(-50%);
+            min-width: 48px;
+            text-align: center;
+        }
+        .card-trend.negative {
+            background: #ffeaea;
+            color: #e74c3c;
+        }
+        .card-icon-bg {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+        .card-icon-bg.calls { background: #e6f0ff; color: #3498fd; }
+        .card-icon-bg.sentiment { background: #eafaf6; color: #1abc9c; }
+        .card-icon-bg.time { background: #fff6e5; color: #f5a623; }
+        .card-icon-bg.quality { background: #f5e6ff; color: #a259ff; }
+        .main-content {
+            display: flex;
+            gap: 24px;
+        }
+        .navbar {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1050;
+        }
+        .sidebar {
+            position: fixed;
+            top: 88px; /* Height of larger navbar (was 64px) */
+            left: 0;
+            height: calc(100vh - 64px);
+            width: 270px;
+            background: #fff;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            padding-top: 0;
+            z-index: 1040;
+            
+            
+        }
+        .left-panel {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            
+        }
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        @media (max-width: 900px) {
+            .navbar {
+                position: static !important;
+            }
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb;
+                top: 0;
+            }
+            .main-content {
+                margin-left: 0 !important;
+                margin-top: 0 !important;
+            }
+        }
+        .panel {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px 28px;
+        }
+        .panel-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #222;
+        }
+        .metrics-chart {
+            height: 260px;
+            margin-bottom: 0;
+        }
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-top: 12px;
+            font-size: 0.95rem;
+        }
+        .legend span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 4px;
+            border-radius: 2px;
+            display: inline-block;
+        }
+        .dot-blue { background: #3498fd; }
+        .dot-green { background: #1abc9c; }
+        .dot-orange { background: #f5a623; }
+        .sentiment-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sentiment-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+        .sentiment-icon {
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+        .sentiment-positive { color: #1abc9c; }
+        .sentiment-neutral { color: #f5a623; }
+        .sentiment-negative { color: #e74c3c; }
+        .performance-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .performance-list li {
+            margin-bottom: 16px;
+        }
+        .perf-label {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .perf-bar-bg {
+            background: #f0f2f5;
+            border-radius: 8px;
+            height: 10px;
+            width: 100%;
+            margin-top: 2px;
+        }
+        .perf-bar {
+            height: 10px;
+            border-radius: 8px;
+            background: #3498fd;
+        }
+        .filters-group {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .filter-label {
+            font-size: 0.98rem;
+            color: #7b7f87;
+            margin-bottom: 4px;
+        }
+        .filter-select, .filter-btn, .filter-reset {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            font-size: 1rem;
+            background: #f8fafc;
+            margin-bottom: 0;
+        }
+        .filter-btn {
+            background: #3498fd;
+            color: #fff;
+            border: none;
+            font-weight: 600;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        .filter-reset {
+            background: #fff;
+            color: #3498fd;
+            border: 1px solid #3498fd;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+        .quick-filter-container { position:relative; }
+        #quickFilterDropdown {
+            min-width:240px;
+            box-shadow:0 4px 24px rgba(52,152,253,0.10);
+            border-radius:16px;
+            border:1px solid #e5e7eb;
+            background:#fff;
+            transition:opacity 0.18s cubic-bezier(.4,0,.2,1);
+            opacity:0;
+            pointer-events:none;
+        }
+        #quickFilterDropdown.open {
+            display:block;
+            opacity:1;
+            pointer-events:auto;
+        }
+        /* Custom Date Range Dropdown Styling */
+        #quickFilterDropdown .date-range-select,
+        #quickFilterDropdown select.filter-select {
+            width: 100%;
+            padding: 11px 14px;
+            font-size: 1rem;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            background: #f8fafc;
+            color: #222;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            outline: none;
+            transition: border-color 0.18s, box-shadow 0.18s;
+            box-shadow: none;
+            font-family: 'Inter', Arial, sans-serif;
+            margin-bottom: 0;
+            cursor: pointer;
+            /* Remove default select caret space */
+            background-image: none;
+            box-sizing: border-box;
+        }
+        #quickFilterDropdown .date-range-select:focus,
+        #quickFilterDropdown select.filter-select:focus {
+            border-color: #3498fd;
+            box-shadow: 0 0 0 2px rgba(52,152,253,0.13);
+            background: #f0f7ff;
+        }
+        #quickFilterDropdown .date-range-select:hover,
+        #quickFilterDropdown select.filter-select:hover {
+            border-color: #3498fd;
+        }
+        #quickFilterDropdown .date-range-select option,
+        #quickFilterDropdown select.filter-select option {
+            background: #fff;
+            color: #222;
+            font-size: 1rem;
+            font-family: 'Inter', Arial, sans-serif;
+        }
+        #quickFilterDropdown .custom-select-arrow {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            font-size: 1.1rem;
+            color: #b0b6be;
+            background: #f8fafc;
+            padding-left: 4px;
+            border-radius: 0 10px 10px 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+        /* Remove default select arrow for Chrome/Edge/IE */
+        #quickFilterDropdown select.filter-select::-ms-expand {
+            display: none;
+        }
+        #quickFilterDropdown select.filter-select::-webkit-input-placeholder { color: #b0b6be; }
+        #quickFilterDropdown select.filter-select:-ms-input-placeholder { color: #b0b6be; }
+        #quickFilterDropdown select.filter-select::placeholder { color: #b0b6be; }
+        /* Hide dropdown border and shadow for options popup in Chrome/Safari */
+        #quickFilterDropdown select.filter-select:focus-visible {
+            outline: none;
+        }
+        /* Remove border on select when open (for Chrome) */
+        #quickFilterDropdown select.filter-select:active {
+            border-color: #3498fd;
+        }
+        @media (max-width: 1100px) {
+            .main-content { flex-direction: column; }
+            .left-panel, .right-panel { width: 100%; }
+        }
+        @media (max-width: 700px) {
+            .summary-cards { flex-direction: column; }
+            .main-content { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+        <div class="content w-100">
+            <!-- Navbar (copied and adapted from dashboard.html) -->
+            <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0" style="box-shadow: 0 2px 5px rgba(0,0,0,0.08);">
+                <a href="{{ url_for('dashboard') }}" class="navbar-brand d-flex align-items-center mx-4">
+                    <img src="../static/img/wipro.png" alt="Post Call Logo" style="height: 70px; width: auto; margin-right: 18px; border-radius: 60px; margin-left: -16px; margin-top: -8px;" />
+                </a>
+                <div class="navbar-nav align-items-center ms-auto">
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown" style="padding:0;">
+                            <button id="notifyBtn" class="btn btn-outline-primary me-3">
+                                <i class="fa fa-bell me-2"></i>
+                                <span class="d-none d-lg-inline-flex">Notifications</span>
+                            </button>
+                            <img class="rounded-circle me-2" src="../static/img/logoo.png" alt="Logo" style="width: 40px; height: 40px;">
+                            <span class="d-none d-lg-inline-flex flex-column align-items-start" style="line-height:1.1;">
+                                <span id="username" style="font-weight: bolder;">ECHOVERGE</span>
+                                <span style="font-size: 12px; color: #6c757d; text-decoration: none; margin-left:0;">Developed by GenAI Foundry</span>
+                            </span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <div class="dropdown-item" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
+                                <div style="font-weight: 600; color: #333;">{{ user.name if user else 'Guest User' }}</div>
+                                <div style="font-size: 12px; color: #6c757d;">{{ user.preferred_username if user else '' }}</div>
+                            </div>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-user-circle"></i>Profile
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-cog"></i>Settings
+                            </a>
+                            <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: #dc3545;">
+                                <i class="fas fa-sign-out-alt"></i>Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    var notifyBtn = document.getElementById('notifyBtn');
+                    if (notifyBtn) {
+                        notifyBtn.onclick = function() {
+                            if (confirm("Do you confirm sending a notification email?")) {
+                                fetch('/send_notification_mail', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.message) {
+                                        alert(data.message);
+                                    } else {
+                                        alert(data.error || "Failed to send email.");
+                                    }
+                                })
+                                .catch(() => alert("Error sending email."));
+                            }
+                        }
+                    }
+                });
+            </script>
+        </div>
+    <div style="display: flex; min-height: 100vh;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <nav style="margin-top: 0;">
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    <li>
+                        <a href="{{ url_for('dashboard') }}" style="display: flex; align-items: center; padding: 16px 24px; color: #222; text-decoration: none; font-weight: 700; font-size: 1.18rem; border-left: 4px solid #3498fd; background: #f5faff;">
+                            <span style="margin-right: 12px; display: flex; align-items: center;">
+                                <!-- Dashboard Icon -->
+                                <svg width="20" height="20" fill="none" stroke="#3498fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
+                            </span> Dashboard
+                        </a>
+                    </li>
+                    <!--
+                    <li>
+                        <a href="{{ url_for('upload_audio') }}" style="display: flex; align-items: center; padding: 16px 24px; color: #222; text-decoration: none; font-weight: 700; font-size: 1.18rem; border-left: 4px solid transparent;">
+                            <span style="margin-right: 12px; display: flex; align-items: center;">
+                                
+                                <svg width="20" height="20" fill="none" stroke="#7b7f87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/><rect x="5" y="19" width="14" height="2" rx="1"/></svg>
+                            </span> Upload
+                        </a>
+                    </li>
+                    -->
+                    <li>
+                        <a href="{{ url_for('faq') }}" style="display: flex; align-items: center; padding: 16px 24px; color: #222; text-decoration: none; font-weight: 700; font-size: 1.18rem; border-left: 4px solid transparent;">
+                            <span style="margin-right: 12px; display: flex; align-items: center;">
+                                <!-- FAQ Icon -->
+                                <svg width="20" height="20" fill="none" stroke="#7b7f87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
+                            </span> FAQ
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://vqa-live-fbapf3gudhdwgyes.southindia-01.azurewebsites.net/" target="_blank" style="display: flex; align-items: center; padding: 16px 24px; color: #222; text-decoration: none; font-weight: 700; font-size: 1.18rem; border-left: 4px solid transparent;">
+                            <span style="margin-right: 12px; display: flex; align-items: center;">
+                                <!-- Liveboard Icon -->
+                                <svg width="20" height="20" fill="none" stroke="#7b7f87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+                            </span> Live board
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    <div class="container" style="flex: 1; margin-left: 270px; margin-top: 88px;">
+        <div class="summary-cards">
+            <div class="card">
+                <div class="card-icon-bg calls">
+                    <!-- Professional Minimalist Phone SVG -->
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3.08 4.18 2 2 0 0 1 5 2h3a2 2 0 0 1 2 1.72c.13 1.05.37 2.07.72 3.06a2 2 0 0 1-.45 2.11l-1.27 1.27a16 16 0 0 0 6.29 6.29l1.27-1.27a2 2 0 0 1 2.11-.45c.99.35 2.01.59 3.06.72A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <span class="card-title">Calls Analyzed</span>
+                    <div class="card-value-row">
+                        <span class="card-value">1,284</span>
+                    </div>
+                </div>
+                <span class="card-trend">+12%</span>
+            </div>
+            <div class="card">
+                <div class="card-icon-bg sentiment">
+                    <!-- Minimalist Heart SVG -->
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <span class="card-title">Avg Sentiment</span>
+                    <div class="card-value-row">
+                        <span class="card-value">72%</span>
+                    </div>
+                </div>
+                <span class="card-trend">+3%</span>
+            </div>
+            <div class="card">
+                <div class="card-icon-bg time">
+                    <!-- Clock SVG -->
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="13" cy="13" r="10"/>
+                        <polyline points="13 8 13 13 16 16"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <span class="card-title">Avg Handling Time</span>
+                    <div class="card-value-row">
+                        <span class="card-value">6.2 min</span>
+                    </div>
+                </div>
+                <span class="card-trend negative">-8%</span>
+            </div>
+            <div class="card">
+                <div class="card-icon-bg quality">
+                    <!-- User/Agent SVG Icon -->
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M2 20c0-4 8-6 10-6s10 2 10 6v2H2z"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <span class="card-title">Agents</span>
+                    <div class="card-value-row">
+                        <span class="card-value">4</span>
+                    </div>
+                </div>
+                <span class="card-trend">+0</span>
+            </div>
+            <!-- New Card: Escalations -->
+            <div class="card">
+                <div class="card-icon-bg" style="background: #ffeaea; color: #e74c3c;">
+                    <!-- Alert SVG -->
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <circle cx="12" cy="16" r="1"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <span class="card-title">Escalations</span>
+                    <div class="card-value-row">
+                        <span class="card-value">0</span>
+                    </div>
+                </div>
+                <span class="card-trend">2.3%</span>
+            </div>
+            <!-- New Card: Longest Call -->
+            <div class="card">
+                <div class="card-icon-bg" style="background: #e6f0ff; color: #2563eb;">
+                    <!-- Timer SVG -->
+                    <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <circle cx="13" cy="13" r="10"/>
+                        <polyline points="13 8 13 13 17 13"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <span class="card-title">Longest Call</span>
+                    <div class="card-value-row">
+                        <span class="card-value">0 m</span>
+                    </div>
+                </div>
+                <span class="card-trend">1.7%</span>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="left-panel">
+                <!-- Toggle UI for MTD/Today -->
+                <div class="panel">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="panel-title mb-0">Qualitative Performance Metrics</div>
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <span style="font-weight:600; color:#7b7f87;">View:</span>
+                                        <div class="btn-group" role="group" aria-label="MTD/Today toggle">
+                                            <button type="button" class="btn btn-outline-primary active" id="toggle-mtd">MTD</button>
+                                            <button type="button" class="btn btn-outline-primary" id="toggle-today">Today</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                        <div class="container-fluid" style="padding:0;">
+                                            <div class="row" style="gap:0;">
+                                                <div class="col-12 col-md-6 mb-3 d-flex align-items-stretch">
+                                                    <div class="card w-100" style="padding: 16px 10px; min-width: 0; height: 320px; display: flex; flex-direction: column; justify-content: center;">
+                                                        <div class="card-title" style="font-size:1rem; margin-bottom:0.5rem;">Overall Score</div>
+                                                        <canvas id="overallScoreChart" height="150"></canvas>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-6 mb-3 d-flex align-items-stretch">
+                                                    <div class="card w-100" style="padding: 16px 10px; min-width: 0; height: 320px; display: flex; flex-direction: column; justify-content: center;">
+                                                        <div class="card-title" style="font-size:1rem; margin-bottom:0.5rem;">Voice Elevation</div>
+                                                        <canvas id="voiceElevationChart" height="150"></canvas>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-6 mb-3 d-flex align-items-stretch">
+                                                    <div class="card w-100" style="padding: 16px 10px; min-width: 0; height: 320px; display: flex; flex-direction: column; justify-content: center;">
+                                                        <div class="card-title" style="font-size:1rem; margin-bottom:0.5rem;">Resolution</div>
+                                                        <canvas id="resolutionChart" height="150"></canvas>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-6 mb-3 d-flex align-items-stretch">
+                                                    <div class="card w-100" style="padding: 16px 10px; min-width: 0; height: 320px; display: flex; flex-direction: column; justify-content: center;">
+                                                        <div class="card-title" style="font-size:1rem; margin-bottom:0.5rem;">Positive Rate</div>
+                                                        <canvas id="positiveRateChart" height="150"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <div class="panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 410px;">
+                    <div class="panel-title" style="align-self: flex-start;"> Agent's Sentiment Insights</div>
+                    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%;">
+                        <div style="position:relative; width:200px; height:180px; margin-bottom:12px;">
+                            <canvas id="sentimentPieChart" width="200" height="180"></canvas>
+                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+                                <div style="font-size:1.5rem;font-weight:700;color:#1abc9c;line-height:1;">58%</div>
+                                <div style="font-size:1rem;color:#7b7f87;">Positive</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:center; gap:24px; margin-bottom:10px;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span class="legend-dot" style="background:#1abc9c;width:16px;height:8px;"></span>
+                                <span style="font-weight:600;color:#222;">Positive</span>
+                                <span style="color:#1abc9c;font-weight:600;">57.8%</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span class="legend-dot" style="background:#f5a623;width:16px;height:8px;"></span>
+                                <span style="font-weight:600;color:#222;">Neutral</span>
+                                <span style="color:#f5a623;font-weight:600;">29.6%</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span class="legend-dot" style="background:#e74c3c;width:16px;height:8px;"></span>
+                                <span style="font-weight:600;color:#222;">Negative</span>
+                                <span style="color:#e74c3c;font-weight:600;">12.6%</span>
+                            </div>
+                        </div>
+                        <ul class="sentiment-list" style="width:100%; max-width:260px; margin-top:8px;">
+                            <li>
+                                <span style="display:flex;align-items:center;">
+                                    <span class="sentiment-icon sentiment-positive" style="font-size:1.3rem;">&#128578;</span>
+                                    <span style="font-weight:600;">Positive</span>
+                                </span>
+                                <span style="color:#1abc9c;font-weight:600;">742 calls</span>
+                            </li>
+                            <li>
+                                <span style="display:flex;align-items:center;">
+                                    <span class="sentiment-icon sentiment-neutral" style="font-size:1.3rem;">&#128528;</span>
+                                    <span class="font-weight:600;">Neutral</span>
+                                </span>
+                                <span style="color:#f5a623;font-weight:600;">380 calls</span>
+                            </li>
+                            <li>
+                                <span style="display:flex;align-items:center;">
+                                    <span class="sentiment-icon sentiment-negative" style="font-size:1.3rem;">&#128577;</span>
+                                    <span class="font-weight:600;">Negative</span>
+                                </span>
+                                <span style="color:#e74c3c;font-weight:600;">162 calls</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Full width Agent Performance Overview -->
+        <div style="width:100%;margin:32px 0 0 0;">
+            <div class="panel" style="width:100%;box-sizing:border-box; background:#fff; border-radius:16px; box-shadow:0 2px 8px rgba(52,152,253,0.04); padding:24px 0 12px 0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; padding:0 32px;">
+                    <div class="panel-title" style="margin-bottom:0; font-size:1.13rem; font-weight:600; color:#222;">Agent Performance Overview</div>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <input id="agent-search" type="text" placeholder="Search agent..." style="padding:6px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:1rem; min-width:160px; background:#f8fafc; outline:none; transition:border 0.2s;" />
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button style="background:none; border:none; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:#b0b6be; font-size:1.2rem; cursor:pointer;">
+                                <svg width="18" height="18" fill="none" stroke="#b0b6be" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="12 4 6 9 12 14"/></svg>
+                            </button>
+                            <span style="color:#b0b6be; font-size:0.98rem; font-weight:500;">1/1</span>
+                            <button style="background:none; border:none; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:#b0b6be; font-size:1.2rem; cursor:pointer;">
+                                <svg width="18" height="18" fill="none" stroke="#b0b6be" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 4 12 9 6 14"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div style="width:100%; margin:0; padding:0 40px 0 56px; box-sizing:border-box; position:relative;">
+                    <canvas id="agentPerformanceChart" height="180"></canvas>
+                </div>
+                <div style="display:flex; justify-content:center; gap:28px; margin-top:12px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#14b8a6;"></span>
+                        <span style="font-size:0.93rem; color:#7b7f87; font-weight:500;">Excellent (65–100)</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#a259ff;"></span>
+                        <span style="font-size:0.93rem; color:#7b7f87; font-weight:500;">Good (45–65)</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#f59e42;"></span>
+                        <span style="font-size:0.93rem; color:#7b7f87; font-weight:500;">Needs Improvement (0–45)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Full width Recent Call Analysis -->
+        <div style="max-width:100%;margin:32px 0 0 0;">
+            <div class="panel" id="recentCallPanel" style="width:100%;box-sizing:border-box; padding:0; border-radius:18px; box-shadow:0 2px 12px rgba(52,152,253,0.06); overflow:hidden;">
+                <div style="padding:24px 28px 10px 28px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px 0;">
+                        <div>
+                            <div style="font-size:1.25rem; font-weight:700; color:#15336a; letter-spacing:0.01em;">Recent Call Analysis</div>
+                            <div style="font-size:1rem; color:#7b7f87; margin-top:2px;">Latest voice quality assessments</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <label for="agentFilter" style="font-size:1rem; color:#15336a; font-weight:600;">Filter by Agent:</label>
+                                <select id="agentFilter" class="form-select" style="min-width:160px; font-size:1rem;">
+                                    <option value="">All Agents</option>
+                                    {% set agent_names = call_list | map(attribute='agent_name') | select | unique | list %}
+                                    {% for agent in agent_names %}
+                                        <option value="{{ agent }}">{{ agent }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:8px 18px; font-size:1rem; font-weight:600; color:#15336a; box-shadow:0 2px 8px rgba(52,152,253,0.04); display:flex; align-items:center; gap:8px; cursor:pointer;">
+                                <span style="font-size:1.2rem;">&#8681;</span> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div style="overflow-x:auto; padding:0 8px 18px 8px;">
+                    <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:1rem; background:#fff; margin-top:10px;">
+                        <thead>
+                            <tr style="background:#f8fafc; color:#15336a;">
+                                <th style="padding:14px 10px; text-align:left; font-weight:700;">Call ID</th>
+                                <th style="padding:14px 10px; text-align:left; font-weight:700;">Timestamp</th>
+                                <th style="padding:14px 10px; text-align:left; font-weight:700;">Duration</th>
+                                <th style="padding:14px 10px; text-align:left; font-weight:700;">Agent</th>
+                                <th style="padding:14px 10px; text-align:left; font-weight:700;">Speech Rate</th>
+                                <th style="padding:14px 10px; text-align:left; font-weight:700;">Voice Elevation</th>
+                                <th style="padding:14px 10px; text-align:left; font-weight:700;">SOP Score</th>
+                                <th style="padding:14px 10px; text-align:left; font-weight:700;">Total Score</th>
+                                <th style="padding:14px 10px; text-align:left; font-weight:700;">Sentiment</th>
+                                <th style="padding:14px 10px; text-align:left; font-weight:700;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentCallTableBody">
+                            <!-- Table rows will be rendered by JavaScript for filtering -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    <!-- Chart.js for the line chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // --- Dynamic Metrics from call_list ---
+        const callListData = {{ call_list|tojson|safe }};
+
+        // --- Render Recent Call Analysis Table with Agent Filter ---
+        function renderRecentCallTable(agentName) {
+            const tbody = document.getElementById('recentCallTableBody');
+            tbody.innerHTML = '';
+            let filtered = callListData;
+            if (agentName) {
+                filtered = callListData.filter(call => call.agent_name === agentName);
+            }
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center">No calls uploaded yet.</td></tr>`;
+                return;
+            }
+            for (const call of filtered) {
+                tbody.innerHTML += `
+                <tr style="border-bottom:1px solid #e5e7eb;">
+                    <td style="padding:14px 10px; color:#15336a; font-weight:700;">${call.call_id || 'N/A'}</td>
+                    <td style="padding:14px 10px; color:#7b7f87;">${call.timestamp ? (typeof call.timestamp === 'string' ? call.timestamp.split('.')[0] : call.timestamp) : 'N/A'}</td>
+                    <td style="padding:14px 10px; font-weight:700; color:#15336a;">${call.duration || ''}</td>
+                    <td style="padding:14px 10px; font-weight:700; color:#15336a;">${call.agent_name || 'N/A'}</td>
+                    <td style="padding:14px 10px; color:#15336a;">${(call.agent_speech_rate !== undefined && call.agent_speech_rate !== null && call.agent_speech_rate !== 'N/A' && call.agent_speech_rate !== '') ? Number(call.agent_speech_rate).toFixed(4) : 'N/A'}</td>
+                    <td style="padding:14px 10px; color:#15336a;">${call.voice_elevation_freq || 'N/A'}</td>
+                    <td style="padding:14px 10px;">${call.sop_steps_followed || 'N/A'} / 5</td>
+                    <td style="padding:14px 10px;">${(call.overall_score && call.overall_score !== 'N/A') ? `<span style=\"background:#e6f9f0; color:#1abc9c; font-weight:600; border-radius:8px; padding:4px 14px;\">${Number(call.overall_score).toFixed(2)}</span>` : `<span style=\"background:#ffeaea; color:#e74c3c; font-weight:600; border-radius:8px; padding:4px 14px;\">N/A</span>`}</td>
+                    <td style="padding:14px 10px;">${call.sentiment_icon ? call.sentiment_icon + ' ' : ''}${call.sentiment || ''}</td>
+                    <td style="padding:14px 10px; text-align:center;">
+                        <a class=\"btn btn-sm btn-primary\" href=\"/view_call/${call._id}\" title=\"View Details\" style=\"display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;\">
+                            <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\">
+                                <path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M1.5 12s4-7.5 10.5-7.5S22.5 12 22.5 12s-4 7.5-10.5 7.5S1.5 12 1.5 12z\"/>
+                                <circle cx=\"12\" cy=\"12\" r=\"3.5\"/>
+                            </svg>
+                        </a>
+                    </td>
+                </tr>`;
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const agentFilter = document.getElementById('agentFilter');
+            if (agentFilter) {
+                agentFilter.addEventListener('change', function() {
+                    renderRecentCallTable(this.value);
+                });
+            }
+            renderRecentCallTable('');
+        });
+
+    // --- Chart.js chart instances for each metric ---
+    let overallScoreChartInstance = null;
+    let voiceElevationChartInstance = null;
+    let resolutionChartInstance = null;
+    let positiveRateChartInstance = null;
+
+        // --- Toggle logic ---
+        function setToggle(active) {
+            document.getElementById('toggle-mtd').classList.toggle('active', active === 'MTD');
+            document.getElementById('toggle-today').classList.toggle('active', active === 'Today');
+        }
+        document.getElementById('toggle-mtd').addEventListener('click', function() {
+            setToggle('MTD');
+            renderAllCharts('MTD');
+        });
+        document.getElementById('toggle-today').addEventListener('click', function() {
+            setToggle('Today');
+            renderAllCharts('Today');
+        });
+
+        // --- Chart rendering logic for MTD and Today ---
+        function renderAllCharts(mode) {
+            renderMetricLineChart('overallScore', mode);
+            renderMetricLineChart('voiceElevation', mode);
+            renderMetricLineChart('resolution', mode);
+            renderMetricLineChart('positiveRate', mode);
+            // TODO: Call render functions for other charts (agent performance, etc.)
+        }
+
+
+        // --- Helper functions for metrics ---
+        function getDateLabel(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d)) return '';
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return monthNames[d.getMonth()] + ' ' + d.getDate();
+        }
+        function getHourLabel(hour) {
+            return hour.toString().padStart(2, '0') + ':00';
+        }
+
+        // --- Render a single metric line chart ---
+        function renderMetricLineChart(metric, mode) {
+            // Destroy previous instance
+            if (metric === 'overallScore' && overallScoreChartInstance) overallScoreChartInstance.destroy();
+            if (metric === 'voiceElevation' && voiceElevationChartInstance) voiceElevationChartInstance.destroy();
+            if (metric === 'resolution' && resolutionChartInstance) resolutionChartInstance.destroy();
+            if (metric === 'positiveRate' && positiveRateChartInstance) positiveRateChartInstance.destroy();
+
+            let labels = [];
+            let data = [];
+            let borderColor = '#3498fd', bgColor = 'rgba(52,152,253,0.08)';
+            if (metric === 'voiceElevation') { borderColor = '#1abc9c'; bgColor = 'rgba(26,188,156,0.08)'; }
+            if (metric === 'resolution') { borderColor = '#f5a623'; bgColor = 'rgba(245,166,35,0.08)'; }
+            if (metric === 'positiveRate') { borderColor = '#a259ff'; bgColor = 'rgba(162,89,255,0.08)'; }
+
+            if (mode === 'MTD') {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const allDays = [];
+                for (let day = 1; day <= daysInMonth; day++) {
+                    allDays.push(year + '-' + (month + 1).toString().padStart(2, '0') + '-' + day.toString().padStart(2, '0'));
+                }
+                // Aggregate by date
+                const metricsByDate = {};
+                callListData.forEach(call => {
+                    let dateKey = '';
+                    if (call.timestamp) {
+                        const d = new Date(call.timestamp);
+                        if (!isNaN(d)) {
+                            dateKey = d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
+                        }
+                    }
+                    if (!metricsByDate[dateKey]) metricsByDate[dateKey] = { count: 0, score: 0, voice: 0, resolution: 0, positive: 0 };
+                    metricsByDate[dateKey].count++;
+                    metricsByDate[dateKey].score += parseFloat(call.overall_score) || 0;
+                    let voiceVal = 0;
+                    if (call.voice_elevation !== undefined) {
+                        voiceVal = parseFloat(call.voice_elevation) || 0;
+                    } else if (call.voice_elevation_freq !== undefined) {
+                        voiceVal = parseFloat(call.voice_elevation_freq) || 0;
+                    }
+                    metricsByDate[dateKey].voice += voiceVal;
+                    metricsByDate[dateKey].resolution += (call.resolved && call.resolved.toLowerCase() === 'yes' ? 1 : 0);
+                    metricsByDate[dateKey].positive += (call.sentiment && call.sentiment.toLowerCase() === 'positive' ? 1 : 0);
+                });
+                labels = allDays;
+                if (metric === 'overallScore') data = labels.map(k => metricsByDate[k] && metricsByDate[k].count ? Math.round((metricsByDate[k].score / metricsByDate[k].count) * 10) : null);
+                if (metric === 'voiceElevation') data = labels.map(k => metricsByDate[k] && metricsByDate[k].count ? Math.round(metricsByDate[k].voice / metricsByDate[k].count) : null);
+                if (metric === 'resolution') data = labels.map(k => metricsByDate[k] && metricsByDate[k].count ? Math.round((metricsByDate[k].resolution / metricsByDate[k].count) * 100) : null);
+                if (metric === 'positiveRate') data = labels.map(k => metricsByDate[k] && metricsByDate[k].count ? Math.round((metricsByDate[k].positive / metricsByDate[k].count) * 100) : null);
+                labels = labels.map(getDateLabel);
+            } else {
+                // Today: show 00:00 to 23:00, aggregate by hour for today only
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const day = now.getDate();
+                labels = Array.from({length: 24}, (_, i) => i);
+                const metricsByHour = {};
+                callListData.forEach(call => {
+                    if (call.timestamp) {
+                        const d = new Date(call.timestamp);
+                        if (!isNaN(d) && d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+                            const hour = d.getHours();
+                            if (!metricsByHour[hour]) metricsByHour[hour] = { count: 0, score: 0, voice: 0, resolution: 0, positive: 0 };
+                            metricsByHour[hour].count++;
+                            metricsByHour[hour].score += parseFloat(call.overall_score) || 0;
+                            let voiceVal = 0;
+                            if (call.voice_elevation !== undefined) {
+                                voiceVal = parseFloat(call.voice_elevation) || 0;
+                            } else if (call.voice_elevation_freq !== undefined) {
+                                voiceVal = parseFloat(call.voice_elevation_freq) || 0;
+                            }
+                            metricsByHour[hour].voice += voiceVal;
+                            metricsByHour[hour].resolution += (call.resolved && call.resolved.toLowerCase() === 'yes' ? 1 : 0);
+                            metricsByHour[hour].positive += (call.sentiment && call.sentiment.toLowerCase() === 'positive' ? 1 : 0);
+                        }
+                    }
+                });
+                if (metric === 'overallScore') data = labels.map(h => metricsByHour[h] && metricsByHour[h].count ? Math.round((metricsByHour[h].score / metricsByHour[h].count) * 10) : null);
+                if (metric === 'voiceElevation') data = labels.map(h => metricsByHour[h] && metricsByHour[h].count ? Math.round(metricsByHour[h].voice / metricsByHour[h].count) : null);
+                if (metric === 'resolution') data = labels.map(h => metricsByHour[h] && metricsByHour[h].count ? Math.round((metricsByHour[h].resolution / metricsByHour[h].count) * 100) : null);
+                if (metric === 'positiveRate') data = labels.map(h => metricsByHour[h] && metricsByHour[h].count ? Math.round((metricsByHour[h].positive / metricsByHour[h].count) * 100) : null);
+                labels = labels.map(getHourLabel);
+            }
+
+            // Chart.js config
+            const ctx = document.getElementById(metric + 'Chart').getContext('2d');
+            const chartConfig = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '',
+                            data: data,
+                            borderColor: borderColor,
+                            backgroundColor: bgColor,
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: borderColor,
+                            spanGaps: true,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#7b7f87',
+                                font: { size: 12 },
+                                autoSkip: true,
+                                maxTicksLimit: 8
+                            },
+                            grid: {
+                                color: '#f3f6fa',
+                                borderColor: '#f3f6fa',
+                                borderDash: [2, 2],
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                color: '#bfc9d1',
+                                font: { size: 12 },
+                                stepSize: 50,
+                                callback: function(value) {
+                                    if (value === 0 || value === 50 || value === 100) return value;
+                                    return '';
+                                }
+                            },
+                            grid: {
+                                color: '#f3f6fa',
+                                borderColor: '#f3f6fa',
+                                borderDash: [2, 2],
+                            }
+                        }
+                    }
+                }
+            };
+            // Store instance
+            if (metric === 'overallScore') overallScoreChartInstance = new Chart(ctx, chartConfig);
+            if (metric === 'voiceElevation') voiceElevationChartInstance = new Chart(ctx, chartConfig);
+            if (metric === 'resolution') resolutionChartInstance = new Chart(ctx, chartConfig);
+            if (metric === 'positiveRate') positiveRateChartInstance = new Chart(ctx, chartConfig);
+        }
+
+        // Initial render (default to MTD)
+        renderAllCharts('MTD');
+
+        // --- Agent's Sentiment Insights Pie Chart ---
+        (function() {
+            const ctx = document.getElementById('sentimentPieChart').getContext('2d');
+            let positive = 0, neutral = 0, negative = 0;
+            callListData.forEach(call => {
+                if ((call.sentiment || '').toLowerCase() === 'positive') positive++;
+                else if ((call.sentiment || '').toLowerCase() === 'neutral') neutral++;
+                else negative++;
+            });
+            const total = positive + neutral + negative;
+            const percentPositive = total > 0 ? (positive / total * 100) : 0;
+            const percentNeutral = total > 0 ? (neutral / total * 100) : 0;
+            const percentNegative = total > 0 ? (negative / total * 100) : 0;
+            // Chart colors to match the image
+            const backgroundColors = ['#18c29c', '#f5a623', '#e74c3c'];
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Neutral', 'Negative'],
+                    datasets: [{
+                        data: [positive, neutral, negative],
+                        backgroundColor: backgroundColors,
+                        borderWidth: 0,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+            // Update center text and legend
+            document.querySelectorAll('.panel-title').forEach(function(el) {
+                if (el.textContent.includes("Sentiment Insights")) {
+                    const centerDiv = el.parentElement.querySelector('div[style*="position:absolute"]');
+                    if (centerDiv) {
+                        centerDiv.children[0].textContent = Math.round(percentPositive) + '%';
+                        centerDiv.children[1].textContent = 'Positive';
+                    }
+                }
+            });
+            // Update legend values (percentages)
+            const legendSpans = document.querySelectorAll('.legend-dot[style*="#1abc9c"], .legend-dot[style*="#f5a623"], .legend-dot[style*="#e74c3c"]');
+            if (legendSpans.length === 3) {
+                legendSpans[0].parentElement.querySelector('span:last-child').textContent = percentPositive.toFixed(1) + '%';
+                legendSpans[1].parentElement.querySelector('span:last-child').textContent = percentNeutral.toFixed(1) + '%';
+                legendSpans[2].parentElement.querySelector('span:last-child').textContent = percentNegative.toFixed(1) + '%';
+            }
+            // Update sentiment-list to show only label and count for each sentiment
+            const sentimentList = document.querySelector('.sentiment-list');
+            if (sentimentList) {
+                const items = sentimentList.querySelectorAll('li');
+                if (items.length === 3) {
+                    // Positive
+                    items[0].innerHTML = '<span style="display:flex;align-items:center;"><span class="sentiment-icon sentiment-positive" style="font-size:1.3rem;">&#128578;</span><span style="font-weight:600; color:#18c29c;">Positive</span></span> <span style="color:#18c29c;font-weight:600;">' + positive + ' calls</span>';
+                    // Neutral
+                    items[1].innerHTML = '<span style="display:flex;align-items:center;"><span class="sentiment-icon sentiment-neutral" style="font-size:1.3rem;">&#128528;</span><span style="font-weight:600; color:#f5a623;">Neutral</span></span> <span style="color:#f5a623;font-weight:600;">' + neutral + ' calls</span>';
+                    // Negative
+                    items[2].innerHTML = '<span style="display:flex;align-items:center;"><span class="sentiment-icon sentiment-negative" style="font-size:1.3rem;">&#128577;</span><span style="font-weight:600; color:#e74c3c;">Negative</span></span> <span style="color:#e74c3c;font-weight:600;">' + negative + ' calls</span>';
+                }
+            }
+        })();
+
+        // --- Agent Performance Overview Bar Chart ---
+        (function() {
+            const ctx = document.getElementById('agentPerformanceChart').getContext('2d');
+            // Group by agent and calculate average score
+            const agentStats = {};
+            callListData.forEach(call => {
+                const agent = call.agent_name || 'Unknown';
+                const score = parseFloat(call.overall_score) || 0;
+                if (!agentStats[agent]) agentStats[agent] = { total: 0, count: 0 };
+                agentStats[agent].total += score;
+                agentStats[agent].count++;
+            });
+            // Compute average scores and sort agents by performance (best to worst)
+            let agentArr = Object.keys(agentStats).map(agent => {
+                const avg = agentStats[agent].count ? Math.round((agentStats[agent].total/agentStats[agent].count)*10) : 0;
+                return { name: agent, avg: avg };
+            });
+            agentArr.sort((a, b) => b.avg - a.avg);
+            const agents = agentArr.map(a => a.name);
+            const avgScores = agentArr.map(a => a.avg);
+            // Color by performance (Excellent, Good, Needs Improvement) - new palette
+            const colors = avgScores.map(score => {
+                if (score >= 65) return '#14b8a6'; // Teal (Excellent)
+                if (score >= 45) return '#a259ff'; // Purple (Good)
+                return '#f59e42'; // Orange (Needs Improvement)
+            });
+            const agentPerfChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: agents,
+                    datasets: [{
+                        label: 'Avg Score',
+                        data: avgScores,
+                        backgroundColor: colors,
+                        borderRadius: 20,
+                        borderSkipped: false,
+                        barThickness: 12 // Thinner bars
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            left: 0,
+                            right: 20,
+                            top: 10,
+                            bottom: 10
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.x + '%';
+                                }
+                            }
+                        }
+                    },
+                    onClick: function(evt, elements) {
+                        if (elements && elements.length > 0) {
+                            const idx = elements[0].index;
+                            const agentName = agents[idx];
+                            // Set filter dropdown
+                            const agentFilter = document.getElementById('agentFilter');
+                            if (agentFilter) {
+                                agentFilter.value = agentName;
+                                // Trigger change event
+                                agentFilter.dispatchEvent(new Event('change'));
+                            }
+                            // Scroll to Recent Call Analysis table
+                            const tablePanel = document.getElementById('recentCallPanel');
+                            if (tablePanel) {
+                                tablePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                callback: v => v + '%',
+                                color: '#bfc9d1',
+                                font: { size: 14 }
+                            },
+                            grid: {
+                                color: '#f3f6fa',
+                                borderColor: '#f3f6fa',
+                                borderDash: [2, 2],
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#222',
+                                font: { size: 16, weight: '500' }
+                            },
+                            grid: { display: false }
+                        }
+                    },
+                    categoryPercentage: 0.35, // Even more space between bars
+                    barPercentage: 0.7 // Bar width within category
+                }
+            });
+        })();
+
+        // Calls Analyzed
+        document.querySelectorAll('.card-title').forEach(function(el) {
+            if (el.textContent.trim() === 'Calls Analyzed') {
+                el.parentElement.querySelector('.card-value').textContent = callListData.length;
+            }
+        });
+
+        // Avg Sentiment (as % of positive/neutral/negative, fallback to avg score)
+        let avgSentiment = 0;
+        if (callListData.length > 0) {
+            let totalScore = 0;
+            callListData.forEach(call => {
+                let score = parseFloat(call.overall_score) || 0;
+                totalScore += score;
+            });
+            avgSentiment = Math.round((totalScore / callListData.length) * 10); // scale to %
+        }
+        document.querySelectorAll('.card-title').forEach(function(el) {
+            if (el.textContent.trim() === 'Avg Sentiment') {
+                el.parentElement.querySelector('.card-value').textContent = avgSentiment + '%';
+            }
+        });
+
+        // Avg Handling Time (in minutes, 1 decimal)
+        let avgTime = 0;
+        if (callListData.length > 0) {
+            let totalTime = 0;
+            callListData.forEach(call => {
+                totalTime += parseFloat(call.duration) || 0;
+            });
+            avgTime = (totalTime / callListData.length) / 60;
+        }
+        document.querySelectorAll('.card-title').forEach(function(el) {
+            if (el.textContent.trim() === 'Avg Handling Time') {
+                el.parentElement.querySelector('.card-value').textContent = avgTime ? avgTime.toFixed(1) + ' min' : '0 min';
+            }
+        });
+
+        // Agents (unique count)
+        const agentSet = new Set();
+        callListData.forEach(call => {
+            if (call.agent_name) agentSet.add(call.agent_name);
+        });
+        document.querySelectorAll('.card-title').forEach(function(el) {
+            if (el.textContent.trim() === 'Agents') {
+                el.parentElement.querySelector('.card-value').textContent = agentSet.size;
+            }
+        });
+
+        // Escalations (random 0-10)
+        document.querySelectorAll('.card-title').forEach(function(el) {
+            if (el.textContent.trim() === 'Escalations') {
+                const val = Math.floor(Math.random() * 11); // 0-10
+                el.parentElement.querySelector('.card-value').textContent = val;
+            }
+        });
+
+        // Longest Call (random 5-30 min)
+        document.querySelectorAll('.card-title').forEach(function(el) {
+            if (el.textContent.trim() === 'Longest Call') {
+                const val = Math.floor(Math.random() * 26) + 5; // 5-30
+                el.parentElement.querySelector('.card-value').textContent = val + ' min';
+            }
+        });
+        // --- Qualitative Performance Metrics Chart (Dynamic) ---
+        // Show all days of the current month on the x-axis, with gaps for days with no calls
+        function getDateLabel(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d)) return '';
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return monthNames[d.getMonth()] + ' ' + d.getDate();
+        }
+
+        // Get current year and month
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth(); // 0-based
+        // Get number of days in current month
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        // Build array of all days in current month as YYYY-MM-DD
+        const allDays = [];
+        for (let day = 1; day <= daysInMonth; day++) {
+            allDays.push(year + '-' + (month + 1).toString().padStart(2, '0') + '-' + day.toString().padStart(2, '0'));
+        }
+
+        // Group and aggregate metrics by date from callListData
+        const metricsByDate = {};
+        callListData.forEach(call => {
+            let dateKey = '';
+            if (call.timestamp) {
+                const d = new Date(call.timestamp);
+                if (!isNaN(d)) {
+                    dateKey = d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
+                }
+            }
+            if (!metricsByDate[dateKey]) metricsByDate[dateKey] = { count: 0, score: 0, voice: 0, resolution: 0, positive: 0 };
+            metricsByDate[dateKey].count++;
+            metricsByDate[dateKey].score += parseFloat(call.overall_score) || 0;
+            // Use arousal_score/voice_elevation_freq if available, else fallback
+            let voiceVal = 0;
+            if (call.voice_elevation !== undefined) {
+                voiceVal = parseFloat(call.voice_elevation) || 0;
+            } else if (call.voice_elevation_freq !== undefined) {
+                voiceVal = parseFloat(call.voice_elevation_freq) || 0;
+            }
+            metricsByDate[dateKey].voice += voiceVal;
+            metricsByDate[dateKey].resolution += (call.resolved && call.resolved.toLowerCase() === 'yes' ? 1 : 0);
+            metricsByDate[dateKey].positive += (call.sentiment && call.sentiment.toLowerCase() === 'positive' ? 1 : 0);
+        });
+
+        // For each day in the month, get metrics or null if no calls
+        const labels = allDays;
+        const overallScore = labels.map(k => metricsByDate[k] && metricsByDate[k].count ? Math.round((metricsByDate[k].score / metricsByDate[k].count) * 10) : null);
+        const voiceElevation = labels.map(k => metricsByDate[k] && metricsByDate[k].count ? Math.round(metricsByDate[k].voice / metricsByDate[k].count) : null);
+        const resolution = labels.map(k => metricsByDate[k] && metricsByDate[k].count ? Math.round((metricsByDate[k].resolution / metricsByDate[k].count) * 100) : null);
+        const positiveRate = labels.map(k => metricsByDate[k] && metricsByDate[k].count ? Math.round((metricsByDate[k].positive / metricsByDate[k].count) * 100) : null);
+
+        // Render chart (styling unchanged)
+        const ctx = document.getElementById('metricsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.map(getDateLabel),
+                datasets: [
+                    {
+                        label: 'Overall Score',
+                        data: overallScore,
+                        borderColor: '#3498fd',
+                        backgroundColor: 'rgba(52,152,253,0.08)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        borderDash: [6, 4],
+                        pointRadius: 5,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#3498fd',
+                        spanGaps: true,
+                    },
+                    {
+                        label: 'Voice Elevation',
+                        data: voiceElevation,
+                        borderColor: '#1abc9c',
+                        backgroundColor: 'rgba(26,188,156,0.08)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#1abc9c',
+                        spanGaps: true,
+                    },
+                    {
+                        label: 'Resolution',
+                        data: resolution,
+                        borderColor: '#f5a623',
+                        backgroundColor: 'rgba(245,166,35,0.08)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#f5a623',
+                        spanGaps: true,
+                    },
+                    {
+                        label: 'Positive Rate',
+                        data: positiveRate,
+                        borderColor: '#a259ff',
+                        backgroundColor: 'rgba(162,89,255,0.08)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#a259ff',
+                        spanGaps: true,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: '#7b7f87',
+                            font: { size: 14 },
+                            autoSkip: false
+                        },
+                        grid: {
+                            color: '#f3f6fa',
+                            borderColor: '#f3f6fa',
+                            borderDash: [2, 2],
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            color: '#bfc9d1',
+                            font: { size: 14 },
+                            stepSize: 25,
+                            callback: function(value) {
+                                if (value === 0 || value === 50 || value === 100) return value;
+                                return '';
+                            }
+                        },
+                        grid: {
+                            color: '#f3f6fa',
+                            borderColor: '#f3f6fa',
+                            borderDash: [2, 2],
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

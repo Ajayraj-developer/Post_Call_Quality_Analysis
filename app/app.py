@@ -154,7 +154,7 @@ def authorized():
             pass
     except Exception as e:
         return redirect(url_for("login"))
-    return redirect(url_for("upload_audio"))
+    return redirect(url_for("dashboard"))
 
 @app.route("/logout")
 def logout():
@@ -526,7 +526,7 @@ def dashboard():
             "sop_steps_followed": sop_steps_followed
         })
     
-    return render_template('dashboard.html', user=session.get("user"), call_list=call_list)
+    return render_template('dashboard2.html', user=session.get("user"), call_list=call_list)
 @app.route('/team')
 def team():
     return render_template('team.html')
@@ -537,14 +537,15 @@ def faq():
 @app.route('/sync_cloud', methods=['POST'])
 @login_required
 def sync_cloud():
-    # Set your Google Drive folder ID and download directory
-    folder_id = '1F5JG1JCG94Pkuj5CPsevbk1x_BqWg5vJ'  # TODO: move to config if needed
+    # Set your Azure Blob Storage credentials and download directory
+    storage_account_name = 'enterprisegptdrive'
+    container_name = 'vqa'
+    sas_token = 'sp=rawdl&st=2025-09-09T08:52:07Z&se=2026-01-09T17:07:07Z&sv=2024-11-04&sr=c&sig=6N5BuB0HINGPgLtA%2BQdfGUQGHEl2lM4Kgv4ofvSogX4%3D'
     download_dir = os.path.join('Cloud_sync', 'downloaded_transcripts')
     os.makedirs(download_dir, exist_ok=True)
-    service_account_json = os.path.join('Cloud_sync', 'credentials.json')  # Path to your service account JSON
 
-    from cloud import sync_all_calls_from_cloud
-    results = sync_all_calls_from_cloud(service_account_json, folder_id, download_dir)
+    from cloud import sync_all_calls_from_azure
+    results = sync_all_calls_from_azure(storage_account_name, container_name, sas_token, download_dir)
     processed = 0
     errors = []
     for call in results:

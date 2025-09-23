@@ -1,59 +1,42 @@
 
 import os
 import io
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
 
-def sync_all_calls_from_cloud(service_account_json, folder_id, download_dir):
-    """
-    Syncs all call sets (transcript + agent + emp audio) from a Google Drive folder.
-    Downloads files to download_dir and returns a list of dicts for each call set.
-    """
-    # Authenticate with Google Drive
-    creds = service_account.Credentials.from_service_account_file(service_account_json, scopes=["https://www.googleapis.com/auth/drive"])
-    service = build('drive', 'v3', credentials=creds)
+# Step 1: Add Azure Blob Storage sync function
+from azure.storage.blob import BlobServiceClient
+import os
 
-    # List all files in the folder
-    query = f"'{folder_id}' in parents and trashed = false"
-    files = []
-    page_token = None
-    while True:
-        response = service.files().list(q=query, fields="nextPageToken, files(id, name)", pageToken=page_token).execute()
-        files.extend(response.get('files', []))
-        page_token = response.get('nextPageToken', None)
-        if page_token is None:
-            break
+def sync_all_calls_from_azure(storage_account_name, container_name, sas_token, download_dir):
+    blob_service_client = BlobServiceClient(
+        account_url=f"https://{storage_account_name}.blob.core.windows.net",
+        credential=sas_token
+    )
+    container_client = blob_service_client.get_container_client(container_name)
+    os.makedirs(download_dir, exist_ok=True)
 
-    # Group files by call_id
-    calls = {}
-    for f in files:
-        name = f['name']
-        if name.endswith('.txt'):
-            base = name.split('.')[0]
-            calls.setdefault(base, {})['transcript'] = f
-        elif name.endswith('_agent.wav'):
-            base = name.replace('_agent.wav', '')
-            calls.setdefault(base, {})['agent_audio'] = f
-        elif name.endswith('_emp.wav'):
-            base = name.replace('_emp.wav', '')
-            calls.setdefault(base, {})['emp_audio'] = f
+    call_files = {}
+    for blob in container_client.list_blobs():
+        base_name = blob.name.split('.')[0].replace('_agent', '').replace('_emp', '')
+        call_files.setdefault(base_name, []).append(blob.name)
 
     results = []
-    for call_id, file_set in calls.items():
-        if 'transcript' in file_set and 'agent_audio' in file_set and 'emp_audio' in file_set:
-            downloaded = {}
-            for key in ['transcript', 'agent_audio', 'emp_audio']:
-                file_info = file_set[key]
-                file_id = file_info['id']
-                file_name = file_info['name']
-                file_path = os.path.join(download_dir, file_name)
-                request = service.files().get_media(fileId=file_id)
-                fh = io.FileIO(file_path, 'wb')
-                downloader = MediaIoBaseDownload(fh, request)
-                done = False
-                while not done:
-                    status, done = downloader.next_chunk()
-                downloaded[key] = file_path
-            results.append({'call_id': call_id, **downloaded})
+    for call_id, files in call_files.items():
+        transcript = agent_audio = emp_audio = None
+        for fname in files:
+            download_path = os.path.join(download_dir, os.path.basename(fname))
+            with open(download_path, "wb") as f:
+                f.write(container_client.download_blob(fname).readall())
+            if fname.endswith('.txt'):
+                transcript = download_path
+            elif fname.endswith('_agent.wav'):
+                agent_audio = download_path
+            elif fname.endswith('_emp.wav'):
+                emp_audio = download_path
+        if transcript and agent_audio and emp_audio:
+            results.append({
+                "call_id": call_id,
+                "transcript": transcript,
+                "agent_audio": agent_audio,
+                "emp_audio": emp_audio
+            })
     return results
