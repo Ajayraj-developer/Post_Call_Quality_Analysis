@@ -52,10 +52,10 @@
                     <i class="fa fa-phone icon-blue"></i> Call Details
                 </h2>
                 <div class="detail-item">
-                    <strong>Duration</strong> 12:34
+                        <strong>Duration</strong> {{ duration if duration is not none else 'N/A' }}
                 </div>
                 <div class="detail-item">
-                    <strong>Date & Time</strong> May 4, 2025 10:15 AM
+                        <strong>Date & Time</strong> {{ created_at if created_at is not none else 'N/A' }}
                 </div>
                 <div class="detail-item">
                     <strong>User Location</strong> Coimbatore, India
@@ -68,11 +68,9 @@
                     <i class="fa fa-user-circle icon-blue"></i> Agent Information
                 </h2>
                 <div class="detail-item">
-                    <strong>Name</strong> Michael Thompson
+                    <strong>Name</strong> {{ agent_name if agent_name is not none else 'N/A' }}
                 </div>
-                <div class="detail-item">
-                    <strong>Title</strong> Customer Support 
-                </div>
+
                 <div class="detail-item">
                     <strong>Agent ID</strong> AG-2025-0742
                 </div>
@@ -87,14 +85,12 @@
                     <i class="fa fa-microphone icon-blue"></i> Recording Metadata
                 </h2>
                 <div class="detail-item">
-                    <strong>Call ID</strong> CALL-25050415-8742
+                    <strong>Call ID</strong> {{ call_id if call_id is not none else 'N/A' }}
                 </div>
                 <div class="detail-item">
-                    <strong>Audio Format</strong> MP3 
+                    <strong>Audio Format</strong> WAV 
                 </div>
-                <div class="detail-item">
-                    <strong>File Size</strong> 4.2 MB
-                </div>
+
                 <div class="detail-item">
                     <strong>Channel</strong> Telephone
                 </div>

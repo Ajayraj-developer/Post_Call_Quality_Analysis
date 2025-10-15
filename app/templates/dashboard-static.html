@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Echoverge Vision Dashboard (Static UI)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --success: #2be7a3;
+      --success-light: #e6fcf4;
+      --danger: #ff5c5c;
+      --danger-light: #ffeaea;
+      --warning: #fbbf24;
+      --warning-light: #fffbe6;
+      --primary: #5a6cff;
+      --primary-hover: #3b47b7;
+      --primary-foreground: #fff;
+      --card-border: #e5e7eb;
+  --muted: #e6f0fa;
+  --muted-foreground: #7b8190;
+      --chart-1: #5a6cff;
+      --chart-2: #2be7a3;
+      --chart-3: #fbbf24;
+      --chart-4: #a259e6;
+      --chart-5: #ff5c5c;
+  --sidebar-bg: #ffffff;
+  --navbar-bg: #ffffff;
+  --card-bg: #fcfcfc;
+      --shadow: 0 4px 24px 0 rgba(90,108,255,0.07), 0 1.5px 4px 0 rgba(90,108,255,0.04);
+      --font-main: 'Inter', 'Segoe UI', Arial, sans-serif;
+    }
+    body {
+      font-family: var(--font-main);
+      background: var(--muted);
+      color: #23263b;
+    }
+    .text-success { color: var(--success); }
+    .bg-success-light { background: var(--success-light); }
+    .text-danger { color: var(--danger); }
+    .bg-danger-light { background: var(--danger-light); }
+    .text-warning { color: var(--warning); }
+    .bg-warning-light { background: var(--warning-light); }
+    .text-primary { color: var(--primary); }
+    .bg-primary { background: var(--primary); }
+    .bg-primary-hover { background: var(--primary-hover); }
+    .text-primary-foreground { color: var(--primary-foreground); }
+    .border-card-border { border-color: var(--card-border); }
+    .bg-muted { background: var(--muted); }
+    .text-muted-foreground { color: var(--muted-foreground); }
+    .sidebar-gradient {
+      background: var(--sidebar-bg);
+      box-shadow: var(--shadow);
+    }
+    .navbar-gradient {
+      background: var(--navbar-bg);
+      box-shadow: var(--shadow);
+    }
+    .card-gradient {
+      background: var(--card-bg);
+      box-shadow: var(--shadow);
+    }
+    .kpi-icon {
+      background: linear-gradient(135deg, #5a6cff 0%, #2be7a3 100%);
+      box-shadow: 0 2px 8px 0 rgba(90,108,255,0.10);
+    }
+    .kpi-icon-alt {
+      background: linear-gradient(135deg, #fbbf24 0%, #ff5c5c 100%);
+      box-shadow: 0 2px 8px 0 rgba(251,191,36,0.10);
+    }
+    .kpi-icon-success {
+      background: linear-gradient(135deg, #2be7a3 0%, #5a6cff 100%);
+      box-shadow: 0 2px 8px 0 rgba(43,231,163,0.10);
+    }
+    .kpi-icon-danger {
+      background: linear-gradient(135deg, #ff5c5c 0%, #fbbf24 100%);
+      box-shadow: 0 2px 8px 0 rgba(255,92,92,0.10);
+    }
+    .kpi-icon-warning {
+      background: linear-gradient(135deg, #fbbf24 0%, #2be7a3 100%);
+      box-shadow: 0 2px 8px 0 rgba(251,191,36,0.10);
+    }
+    .kpi-icon-purple {
+      background: linear-gradient(135deg, #a259e6 0%, #5a6cff 100%);
+      box-shadow: 0 2px 8px 0 rgba(162,89,230,0.10);
+    }
+    .kpi-icon-blue {
+      background: linear-gradient(135deg, #5a6cff 0%, #a259e6 100%);
+      box-shadow: 0 2px 8px 0 rgba(90,108,255,0.10);
+    }
+    .kpi-icon-green {
+      background: linear-gradient(135deg, #2be7a3 0%, #fbbf24 100%);
+      box-shadow: 0 2px 8px 0 rgba(43,231,163,0.10);
+    }
+    .kpi-icon-orange {
+      background: linear-gradient(135deg, #fbbf24 0%, #ff5c5c 100%);
+      box-shadow: 0 2px 8px 0 rgba(251,191,36,0.10);
+    }
+    .kpi-icon-red {
+      background: linear-gradient(135deg, #ff5c5c 0%, #a259e6 100%);
+      box-shadow: 0 2px 8px 0 rgba(255,92,92,0.10);
+    }
+    .kpi-icon-user {
+      background: linear-gradient(135deg, #2be7a3 0%, #5a6cff 100%);
+      box-shadow: 0 2px 8px 0 rgba(43,231,163,0.10);
+    }
+    .table-header {
+      background: linear-gradient(90deg, #f8fafc 0%, #e9eefd 100%);
+    }
+    .table-row {
+      background: #fff;
+      transition: background 0.2s;
+    }
+    .table-row:hover {
+      background: #f3f6fd;
+    }
+    .shadow-smooth {
+      box-shadow: var(--shadow);
+    }
+    .gauge-bg {
+      background: #f0f6ff;
+      border-radius: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    /* Export button styling using CSS variables for accessible contrast */
+    .btn-export {
+      background: linear-gradient(90deg, var(--primary), var(--primary-hover));
+      color: var(--primary-foreground) !important;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .5rem .9rem;
+      border-radius: .6rem;
+      box-shadow: 0 6px 18px rgba(90,108,255,0.10);
+      border: none;
+      transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+    }
+    .btn-export:hover,
+    .btn-export:focus {
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+      box-shadow: 0 10px 30px rgba(90,108,255,0.12);
+    }
+    .btn-export:active {
+      transform: translateY(0);
+      filter: brightness(0.98);
+    }
+  </style>
+</head>
+<body class="bg-[#e6f0fa] min-h-screen text-gray-900">
+  <!-- Header/Navbar from agent_performance.html -->
+  <header class="bg-white border-b border-secondary-200 sticky top-0 z-50">
+    <div class="max-w-full px-6 py-4">
+      <div class="flex items-center justify-between">
+        <!-- Logo and Title -->
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-3">
+            <img src="{{ url_for('static', filename='img/logoo.png') }}" alt="Echoverge Logo" class="w-8 h-8" style="object-fit:contain;" />
+            <div>
+              <h1 class="text-xl font-bold text-text-primary">Echoverge</h1>
+              <p class="text-xs text-text-secondary">Wipro Live Workspace</p>
+            </div>
+          </div>
+        </div>
+
+  <!-- Navigation -->
+  <!-- NOTE: nav tabs hidden via #topTabs { display: none } below. Remove/adjust CSS to show tabs again. -->
+  <nav id="topTabs" class="hidden md:flex items-center space-x-6">
+          <a href="{{ url_for('dashboard') }}" class="px-3 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 {% if request.endpoint == 'dashboard' %}text-primary-600 bg-primary-50{% else %}text-text-secondary hover:text-primary-600 hover:bg-primary-50{% endif %}">
+            Overview
+          </a>
+          <a href="{{ url_for('real_time_operations') }}" class="px-3 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 {% if request.endpoint == 'real_time_operations' %}text-primary-600 bg-primary-50{% else %}text-text-secondary hover:text-primary-600 hover:bg-primary-50{% endif %}">
+            Real Time Operations
+          </a>
+          <a href="{{ url_for('agent_performance') }}" class="px-3 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 {% if request.endpoint == 'agent_performance' %}text-primary-600 bg-primary-50{% else %}text-text-secondary hover:text-primary-600 hover:bg-primary-50{% endif %}">
+            Agent Performance
+          </a>
+          <a href="{{ url_for('sentiment_analytics') }}" class="px-3 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 {% if request.endpoint == 'sentiment_analytics' %}text-primary-600 bg-primary-50{% else %}text-text-secondary hover:text-primary-600 hover:bg-primary-50{% endif %}">
+            Sentiment Analytics
+          </a>
+          <a href="{{ url_for('executive_overview') }}" class="px-3 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 {% if request.endpoint == 'executive_overview' %}text-primary-600 bg-primary-50{% else %}text-text-secondary hover:text-primary-600 hover:bg-primary-50{% endif %}">
+            Executive Overview
+          </a>
+        </nav>
+
+        <!-- Controls -->
+        <div class="flex items-center space-x-4">
+          <!-- User Dropdown -->
+          <div class="relative" id="userDropdownWrapper">
+            <button id="userDropdownBtn" class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 focus:outline-none" aria-expanded="false" aria-haspopup="true">
+              <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+              <span class="text-sm font-medium">{{ user.name if user else 'Guest User' }}</span>
+              <svg class="w-3 h-3 text-gray-500" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+            </button>
+            <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-card-border z-50">
+              <div class="px-4 py-3 border-b border-card-border">
+                <div class="text-sm font-semibold">{{ user.name if user else 'Guest User' }}</div>
+                <div class="text-xs text-muted-foreground">{{ user.email if user and user.email else '-' }}</div>
+              </div>
+              <div class="py-2">
+                <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Profile</a>
+                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log out</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <style>
+    /* Hide the top nav tabs on this static dashboard page. */
+    #topTabs { display: none !important; }
+  </style>
+  <script>
+    // User dropdown toggle
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.getElementById('userDropdownBtn');
+      const menu = document.getElementById('userDropdownMenu');
+      const wrapper = document.getElementById('userDropdownWrapper');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const isHidden = menu.classList.contains('hidden');
+        if (isHidden) {
+          menu.classList.remove('hidden');
+          btn.setAttribute('aria-expanded', 'true');
+        } else {
+          menu.classList.add('hidden');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+      // close on outside click
+      document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+          menu.classList.add('hidden');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+  </script>
+  <div class="flex pt-0">
+    <!-- Sidebar -->
+    <aside class="w-64 sidebar-gradient border-r border-card-border h-[calc(100vh-4rem)]">
+      <div class="p-6 fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] sidebar-gradient border-r border-card-border z-30 flex flex-col">
+        <nav class="space-y-2">
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left bg-primary text-primary-foreground shadow transition-all">
+            <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
+            <span class="font-medium">Dashboard</span>
+          </button>
+          <a href="{{ url_for('faq') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+            <i data-lucide="help-circle" class="h-5 w-5"></i>
+            <span class="font-medium">FAQ</span>
+          </a>
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+            <i data-lucide="radio" class="h-5 w-5"></i>
+            <span class="font-medium">Live Board</span>
+          </button>
+          <a href="{{ url_for('upload_audio') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+            <i data-lucide="settings" class="h-5 w-5"></i>
+            <span class="font-medium">Settings</span>
+          </a>
+        </nav>
+      </div>
+    </aside>
+    <main class="flex-1 p-6 space-y-6">
+      <!-- Filter Buttons -->
+      <div class="card-gradient border border-card-border rounded-xl p-4 shadow-smooth">
+        <form method="get" action="{{ url_for('dashboard') }}" class="flex items-center gap-3" id="filterForm">
+          <input type="hidden" name="page" value="{{ request.args.get('page', 1) }}">
+          <!-- Filter buttons: use CSS variables for consistent theming -->
+          <button type="submit" name="filter" value="total" class="filter-btn {% if request.args.get('filter', 'total') == 'total' %}filter-btn--active{% endif %}">Total</button>
+          <button type="submit" name="filter" value="today" class="filter-btn {% if request.args.get('filter') == 'today' %}filter-btn--active{% endif %}">Today</button>
+          <button type="submit" name="filter" value="wtd" class="filter-btn {% if request.args.get('filter') == 'wtd' %}filter-btn--active{% endif %}">WTD</button>
+          <button type="submit" name="filter" value="mtd" class="filter-btn {% if request.args.get('filter') == 'mtd' %}filter-btn--active{% endif %}">MTD</button>
+          <div class="flex items-center gap-2">
+            <input type="date" name="start_date" id="startDate" class="filter-date" value="{{ request.args.get('start_date', '') }}">
+            <input type="date" name="end_date" id="endDate" class="filter-date" value="{{ request.args.get('end_date', '') }}">
+            <button type="submit" name="filter" value="custom" id="customRangeBtn" class="filter-btn {% if request.args.get('filter') == 'custom' %}filter-btn--active{% endif %}">Custom Range</button>
+          </div>
+        </form>
+        <script>
+        // Auto-select 'Custom Range' when date is picked
+        document.addEventListener('DOMContentLoaded', function() {
+          const start = document.getElementById('startDate');
+          const end = document.getElementById('endDate');
+          const customBtn = document.getElementById('customRangeBtn');
+          [start, end].forEach(function(input) {
+            input.addEventListener('change', function() {
+              if (start.value && end.value) {
+                customBtn.classList.add('ring-2', 'ring-primary');
+              }
+            });
+          });
+        });
+        </script>
+      </div>
+      <style>
+        /* Filter button consistent styling using theme variables */
+        .filter-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: .5rem;
+          padding: .45rem .9rem;
+          border-radius: .6rem;
+          font-size: .9rem;
+          font-weight: 600;
+          color: #1f2937; /* fallback text color */
+          background: linear-gradient(180deg, #ffffff, #f8fafc);
+          border: 1px solid rgba(15,23,42,0.06);
+          box-shadow: 0 2px 6px rgba(16,24,40,0.03);
+          transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, border-color 120ms ease;
+        }
+        .filter-btn:hover,
+        .filter-btn:focus {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(15,23,42,0.06);
+          outline: none;
+        }
+        .filter-btn:active {
+          transform: translateY(0);
+          filter: brightness(0.98);
+        }
+        .filter-btn--active {
+          color: var(--primary-foreground);
+          background: linear-gradient(90deg, var(--primary), var(--primary-hover));
+          border-color: rgba(90,108,255,0.18);
+          box-shadow: 0 10px 30px rgba(90,108,255,0.12);
+        }
+        /* Date inputs that match the filter controls */
+        .filter-date {
+          padding: .4rem .6rem;
+          border-radius: .5rem;
+          border: 1px solid rgba(15,23,42,0.06);
+          background: linear-gradient(180deg, #ffffff, #fbfdff);
+          font-size: .9rem;
+          color: #0f172a;
+          transition: box-shadow 120ms ease, border-color 120ms ease, transform 120ms ease;
+        }
+        .filter-date:focus {
+          outline: none;
+          box-shadow: 0 6px 18px rgba(90,108,255,0.08);
+          border-color: rgba(90,108,255,0.22);
+          transform: translateY(-1px);
+        }
+        /* Small responsive tweak so the control group doesn't overflow */
+        @media (max-width: 900px) {
+          .call-controls { flex-wrap: wrap; gap: .5rem; }
+          .call-controls .filter-btn { margin-bottom: .25rem; }
+        }
+      </style>
+      <!-- Metric Cards -->
+  <div class="space-y-6">
+        <div>
+          <h2 class="text-lg font-semibold mb-4">Call Metrics</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon text-white"><i data-lucide="phone" class="h-6 w-6"></i></div>
+                <div class="text-sm font-medium text-success">+12.%</div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Number of calls</h3>
+                <div class="flex items-baseline gap-1"><span class="text-2xl font-bold">{{ call_list|length }}</span></div>
+              </div>
+            </div>
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-success text-white"><i data-lucide="clock" class="h-6 w-6"></i></div>
+                <div class="text-sm font-medium text-success">+5%</div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Avg call duration</h3>
+                <div class="flex items-baseline gap-1">
+                  {% set total_duration = call_list|map(attribute='duration')|sum if call_list else 0 %}
+                  {% set avg_duration = (total_duration / (call_list|length)) if call_list|length > 0 else 0 %}
+                  {% if avg_duration < 60 %}
+                    <span class="text-2xl font-bold">{{ avg_duration|round(2) }}</span>
+                    <span class="text-muted-foreground text-sm">sec</span>
+                  {% else %}
+                    <span class="text-2xl font-bold">{{ (avg_duration/60)|round(2) }}</span>
+                    <span class="text-muted-foreground text-sm">min</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-purple text-white"><i data-lucide="users" class="h-6 w-6"></i></div>
+                <div class="text-sm font-medium text-success">+8%</div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Peak concurrent calls</h3>
+                <div class="flex items-baseline gap-1"><span class="text-2xl font-bold">156</span></div>
+              </div>
+            </div>
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-orange text-white"><i data-lucide="timer" class="h-6 w-6"></i></div>
+                <div class="text-sm font-medium text-danger">-15%</div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Avg call setup time</h3>
+                <div class="flex items-baseline gap-1"><span class="text-2xl font-bold">2.3</span><span class="text-muted-foreground text-sm">sec</span></div>
+              </div>
+            </div>
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-red text-white"><i data-lucide="phone-call" class="h-6 w-6"></i></div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Longest call</h3>
+                {% set longest_call = (call_list | sort(attribute='duration', reverse=True) | first) if call_list else None %}
+                {% set longest_seconds = longest_call['duration'] if longest_call and longest_call['duration'] else 0 %}
+                {% set mm = (longest_seconds // 60)|int %}
+                {% set ss = (longest_seconds % 60)|int %}
+                <div class="flex items-baseline gap-1">
+                  <span class="text-2xl font-bold">{{ '%02d:%02d' % (mm, ss) }}</span>
+                  <span class="text-muted-foreground text-sm">min</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-user text-white"><i data-lucide="user-check" class="h-6 w-6"></i></div>
+                <div class="text-sm font-medium text-success">+7%</div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Avg calls per agent</h3>
+                <div class="flex items-baseline gap-1">
+                  {% set agent_names = call_list|map(attribute='agent_name')|list if call_list else [] %}
+                  {% set unique_agents = agent_names|unique|list %}
+                  {% set avg_calls_per_agent = (call_list|length / (unique_agents|length)) if unique_agents|length > 0 else 0 %}
+                  <span class="text-2xl font-bold">{{ avg_calls_per_agent|round(2) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold mb-4">Call Sentiment</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-success text-white"><i data-lucide="heart" class="h-6 w-6"></i></div>
+                <div class="text-sm font-medium text-success">+0.5</div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Avg Sentiment</h3>
+                <div class="flex items-baseline gap-1">
+                  {% set sentiments = call_list|map(attribute='overall_score')|list if call_list else [] %}
+                  {% set valid_sentiments = sentiments|reject('equalto', 'N/A')|list %}
+                  {% set avg_sentiment = (valid_sentiments|sum / (valid_sentiments|length)) if valid_sentiments|length > 0 else 0 %}
+                  <span class="text-2xl font-bold">{{ avg_sentiment|round(2) }}</span><span class="text-muted-foreground text-sm">/10</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-blue text-white"><i data-lucide="trending-up" class="h-6 w-6"></i></div>
+                <div class="text-sm font-medium text-success">+3%</div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Emotional Quotient</h3>
+                {% set eq_values = [] %}
+                {% for call in call_list %}
+                  {% if call.get('employee_sentiment_percent') is number %}
+                    {% set _ = eq_values.append(call.get('employee_sentiment_percent')) %}
+                  {% endif %}
+                {% endfor %}
+                {% set eq_avg = (eq_values|sum / (eq_values|length)) if eq_values|length > 0 else 0 %}
+                <div class="flex items-baseline gap-1">
+                  <span class="text-2xl font-bold">{{ eq_avg|round(2) }}%</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-purple text-white"><i data-lucide="mic" class="h-6 w-6"></i></div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Avg Speaking rate of agent</h3>
+                {% set speech_rates = [] %}
+                {% for call in call_list %}
+                  {% if call.get('agent_speech_rate') is number and call.get('agent_speech_rate') > 0 %}
+                    {% set _ = speech_rates.append(call.get('agent_speech_rate')) %}
+                  {% endif %}
+                {% endfor %}
+                {% set avg_speech_rate = (speech_rates|sum / (speech_rates|length)) if speech_rates|length > 0 else 0 %}
+                <div class="flex items-baseline gap-1"><span class="text-2xl font-bold">{{ (avg_speech_rate * 300)|round(2) }}</span><span class="text-muted-foreground text-sm">WPM</span></div>
+              </div>
+            </div>
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-green text-white"><i data-lucide="thumbs-up" class="h-6 w-6"></i></div>
+                <div class="text-sm font-medium text-success">+8%</div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Positive rate</h3>
+                {% set total_calls = call_list|length %}
+                {% set pos_count = call_list|selectattr('sentiment', 'equalto', 'Positive')|list|length %}
+                {% set pos_rate = (pos_count / total_calls * 100) if total_calls > 0 else 0 %}
+                <div class="flex items-baseline gap-1"><span class="text-2xl font-bold">{{ pos_rate|round(2) }}%</span></div>
+              </div>
+            </div>
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-danger text-white"><i data-lucide="thumbs-down" class="h-6 w-6"></i></div>
+                <div class="text-sm font-medium text-danger">-2%</div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Negative rate</h3>
+                {% set neg_count = call_list|selectattr('sentiment', 'equalto', 'Negative')|list|length %}
+                {% set neg_rate = (neg_count / total_calls * 100) if total_calls > 0 else 0 %}
+                <div class="flex items-baseline gap-1"><span class="text-2xl font-bold">{{ neg_rate|round(2) }}%</span></div>
+              </div>
+            </div>
+            <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl kpi-icon-warning text-white"><i data-lucide="check-circle" class="h-6 w-6"></i></div>
+                <div class="text-sm font-medium text-success">+4%</div>
+              </div>
+              <div class="space-y-2">
+                <h3 class="text-muted-foreground text-sm font-medium">Avg SOP adherence</h3>
+                {% set sop_vals = [] %}
+                {% for call in call_list %}
+                  {% if call.get('sop_steps_followed') is number %}
+                    {% set _ = sop_vals.append(call.get('sop_steps_followed')) %}
+                  {% endif %}
+                {% endfor %}
+                {% set avg_sop = (sop_vals|sum / (sop_vals|length * 5) * 100) if sop_vals|length > 0 else 0 %}
+                <div class="flex items-baseline gap-1"><span class="text-2xl font-bold">{{ avg_sop|round(2) }}%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 flex flex-col h-[400px]">
+    <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col h-full">
+            <h3 class="text-lg font-semibold mb-6">Top 5 Engineers</h3>
+            <div class="flex-1 flex items-center justify-center">
+              <!-- Chart.js Grouped Bar Chart -->
+              <canvas id="engineersBarChart" width="600" height="320"></canvas>
+            </div>
+            <div class="flex flex-wrap gap-4 mt-4">
+              <!-- Chart.js legend only -->
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth flex flex-col h-[400px]">
+            <h3 class="text-lg font-semibold mb-6">Sentiment Insights</h3>
+            <div class="flex-1 flex flex-col justify-center gap-8 gauge-bg">
+              <div class="flex flex-col items-center justify-center gap-3 h-full">
+                <div class="flex flex-col items-center">
+                  <h4 class="text-sm font-medium text-muted-foreground mb-0.5" style="font-size: 20px;">Positive</h4>
+                  <div class="flex items-center justify-center" style="min-width:180px; min-height:90px;">
+                    <canvas id="positiveGauge" width="180" height="110"></canvas>
+                  </div>
+                </div>
+                <div class="flex flex-col items-center">
+                  <h4 class="text-sm font-medium text-muted-foreground mb-0.5" style="font-size: 20px;">Negative</h4>
+                  <div class="flex items-center justify-center" style="min-width:180px; min-height:90px;">
+                    <canvas id="negativeGauge" width="180" height="110"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Call Analysis Table -->
+  <div class="card-gradient border border-card-border rounded-xl shadow-smooth">
+  <div class="p-6 border-b border-card-border">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Recent Call Analysis</h3>
+            <div class="flex items-center gap-4 call-controls bg-white/80 border border-card-border rounded-xl shadow-smooth px-4 py-2">
+              <label for="callTableColumn" class="text-sm font-medium text-muted-foreground mr-2">Filter by</label>
+              <select id="callTableColumn" class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary w-40 transition-shadow">
+                <option value="0">Call ID</option>
+                <option value="1">Timestamp</option>
+                <option value="2">Duration</option>
+                <option value="3">Agent</option>
+                <option value="4">Speech Rate</option>
+                <option value="5">Voice Elevation</option>
+                <option value="6">SOP Score</option>
+                <option value="7">Total Score</option>
+                <option value="8">Sentiment</option>
+              </select>
+              <div class="relative search-wrapper w-full max-w-xs">
+                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"></i>
+                <input id="callTableSearch" type="text" placeholder="Search..." class="pl-10 pr-10 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full transition-shadow" />
+                <button id="callTableClear" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary focus:outline-none" style="display:none;" tabindex="-1" aria-label="Clear search">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <button id="callTableExport" type="button" class="btn-export rounded-lg shadow-smooth px-5 py-2 font-semibold flex items-center gap-2 transition-all">
+                <i data-lucide="download" class="h-4 w-4"></i>
+                <span class="text-sm font-medium">Export</span>
+              </button>
+            </div>
+  <script>
+  // Table search, clear, and export functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('callTableSearch');
+    const columnSelect = document.getElementById('callTableColumn');
+    const table = document.getElementById('callAnalysisTable');
+    const exportBtn = document.getElementById('callTableExport');
+    const clearBtn = document.getElementById('callTableClear');
+    if (searchInput && columnSelect && table) {
+      function filterTable() {
+        const filter = searchInput.value.toLowerCase();
+        const colIdx = parseInt(columnSelect.value);
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('td');
+          if (cells.length > colIdx) {
+            const cellText = cells[colIdx].innerText.toLowerCase();
+            row.style.display = cellText.includes(filter) ? '' : 'none';
+          }
+        });
+        if (clearBtn) clearBtn.style.display = filter ? '' : 'none';
+      }
+      searchInput.addEventListener('input', filterTable);
+      columnSelect.addEventListener('change', filterTable);
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+          searchInput.value = '';
+          filterTable();
+          searchInput.focus();
+        });
+      }
+    }
+    if (exportBtn && table) {
+      exportBtn.addEventListener('click', function() {
+        let csv = '';
+        // Get header
+        const headers = table.querySelectorAll('thead th');
+        csv += Array.from(headers).map(th => '"' + th.innerText.trim() + '"').join(',') + '\n';
+        // Get visible rows
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          if (row.style.display === 'none') return;
+          const cells = row.querySelectorAll('td');
+          csv += Array.from(cells).map(td => '"' + td.innerText.replace(/\n/g, ' ').trim() + '"').join(',') + '\n';
+        });
+        // Download
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'call_analysis_export.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+  });
+  </script>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table id="callAnalysisTable" class="w-full">
+  <script>
+  // Table search and export functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('callTableSearch');
+    const columnSelect = document.getElementById('callTableColumn');
+    const table = document.getElementById('callAnalysisTable');
+    const exportBtn = document.getElementById('callTableExport');
+    if (searchInput && columnSelect && table) {
+      searchInput.addEventListener('input', function() {
+        const filter = searchInput.value.toLowerCase();
+        const colIdx = parseInt(columnSelect.value);
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('td');
+          if (cells.length > colIdx) {
+            const cellText = cells[colIdx].innerText.toLowerCase();
+            row.style.display = cellText.includes(filter) ? '' : 'none';
+          }
+        });
+      });
+      columnSelect.addEventListener('change', function() {
+        searchInput.dispatchEvent(new Event('input'));
+      });
+    }
+    if (exportBtn && table) {
+      exportBtn.addEventListener('click', function() {
+        let csv = '';
+        // Get header
+        const headers = table.querySelectorAll('thead th');
+        csv += Array.from(headers).map(th => '"' + th.innerText.trim() + '"').join(',') + '\n';
+        // Get visible rows
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          if (row.style.display === 'none') return;
+          const cells = row.querySelectorAll('td');
+          csv += Array.from(cells).map(td => '"' + td.innerText.replace(/\n/g, ' ').trim() + '"').join(',') + '\n';
+        });
+        // Download
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'call_analysis_export.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+  });
+  </script>
+            <thead class="table-header">
+              <tr>
+                <th class="text-left p-4 text-sm font-semibold text-muted-foreground">Call ID</th>
+                <th class="text-left p-4 text-sm font-semibold text-muted-foreground">Timestamp</th>
+                <th class="text-left p-4 text-sm font-semibold text-muted-foreground">Duration</th>
+                <th class="text-left p-4 text-sm font-semibold text-muted-foreground">Agent</th>
+                <th class="text-left p-4 text-sm font-semibold text-muted-foreground">Speech Rate</th>
+                <th class="text-left p-4 text-sm font-semibold text-muted-foreground">Voice Elevation</th>
+                <th class="text-left p-4 text-sm font-semibold text-muted-foreground">SOP Score</th>
+                <th class="text-left p-4 text-sm font-semibold text-muted-foreground">Total Score</th>
+                <th class="text-left p-4 text-sm font-semibold text-muted-foreground">Sentiment</th>
+                <th class="text-left p-4 text-sm font-semibold text-muted-foreground">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-card-border">
+              {% if call_list and call_list|length > 0 %}
+                {% for call in call_list %}
+                <tr class="table-row">
+                  <td class="p-4 text-sm font-medium">{{ call.get('call_id', 'N/A') }}</td>
+                  <td class="p-4 text-sm text-muted-foreground">
+                    {% if call.get('timestamp') %}
+                      {% if call.get('timestamp').__class__.__name__ == 'datetime' %}
+                        {{ call.get('timestamp').strftime('%Y-%m-%d %H:%M:%S') }}
+                      {% else %}
+                        {{ call.get('timestamp')|string|replace('T', ' ')|replace('Z', '')|split('.')|first }}
+                      {% endif %}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </td>
+                  <td class="p-4 text-sm">{{ call.get('duration', 'N/A') }}</td>
+                  <td class="p-4 text-sm">{{ call.get('agent_name', 'N/A') }}</td>
+                  <td class="p-4 text-sm">
+                    {% if call.get('agent_speech_rate') not in [None, 'N/A', ''] %}
+                      {{ '%.4f' % call.get('agent_speech_rate') }} WPM
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </td>
+                  <td class="p-4 text-sm">{{ call.get('voice_elevation_freq', 'N/A') }}</td>
+                  <td class="p-4 text-sm">{{ call.get('sop_steps_followed', 'N/A') }} / 5</td>
+                  <td class="p-4 text-sm font-medium">
+                    {% if call.get('overall_score') and call.get('overall_score') != 'N/A' %}
+                      {{ '%.2f' % call.get('overall_score') }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </td>
+                  <td class="p-4">
+                    {% if call.get('sentiment_icon') %}{{ call.get('sentiment_icon') }} {{ call.get('sentiment', '') }}{% else %}{{ call.get('sentiment', '') }}{% endif %}
+                  </td>
+                  <td class="p-4">
+<a class="flex items-center gap-1 text-primary hover:text-primary-hover text-sm font-medium" href="{{ url_for('view_call', call_id=call.get('call_id')) }}">                      <span>View Details</span><i data-lucide="external-link" class="h-3 w-3"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="10" class="text-center">No calls uploaded yet.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script>
+    lucide.createIcons();
+    // Chart.js for Top 5 Engineers (Dynamic)
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    script.onload = function() {
+      const ctx = document.getElementById('engineersBarChart').getContext('2d');
+const engineerLabels = {{ top5_engineers | map(attribute='name') | list | tojson }};
+const overallData = {{ top5_engineers | map(attribute='overall') | list | tojson }};
+const sopData = {{ top5_engineers | map(attribute='sop') | list | tojson }};
+const voiceData = {{ top5_engineers | map(attribute='voice') | list | tojson }};
+const techData = {{ top5_engineers | map(attribute='tech') | list | tojson }};
+const speechData = {{ top5_engineers | map(attribute='speech') | list | tojson }};
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: engineerLabels,
+          datasets: [
+            {
+              label: 'Overall Performance',
+              backgroundColor: '#4f8dfd',
+              data: overallData,
+            },
+            {
+              label: 'SOP Adherence',
+              backgroundColor: '#3ec37d',
+              data: sopData,
+            },
+            {
+              label: 'Voice Elevation Rate',
+              backgroundColor: '#ff9800',
+              data: voiceData,
+            },
+            {
+              label: 'Technical Acumen',
+              backgroundColor: '#a259e6',
+              data: techData,
+            },
+            {
+              label: 'Speech Quality Rate',
+              backgroundColor: '#ff5c5c',
+              data: speechData,
+            },
+          ]
+        },
+        options: {
+          responsive: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: {
+                boxWidth: 18,
+                boxHeight: 18,
+                font: { size: 14 }
+              }
+            },
+            title: { display: false }
+          },
+          scales: {
+            x: {
+              stacked: false,
+              grid: { display: false },
+              ticks: { font: { size: 14 } }
+            },
+            y: {
+              beginAtZero: true,
+              max: 100,
+              grid: { color: '#eee' },
+              ticks: { font: { size: 14 } }
+            }
+          },
+          barPercentage: 0.7,
+          categoryPercentage: 0.6
+        }
+      });
+
+      // Gauge chart function
+      function drawGauge(canvasId, value, color) {
+        // Baby blue background and theme
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        ctx.clearRect(0, 0, 180, 110);
+        const cx = 90, cy = 100;
+        // Draw shadow for arc
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 65, Math.PI, 0, false);
+        ctx.shadowColor = 'rgba(90,108,255,0.10)';
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 18;
+        ctx.strokeStyle = '#dbeafe';
+        ctx.stroke();
+        ctx.restore();
+        // Draw background arc
+        ctx.beginPath();
+        ctx.lineWidth = 14;
+        ctx.strokeStyle = '#b6d2f7';
+        ctx.lineCap = 'round';
+        ctx.arc(cx, cy, 65, Math.PI, 0, false);
+        ctx.stroke();
+        // Draw value arc (gradient)
+        ctx.save();
+        ctx.beginPath();
+        ctx.lineWidth = 14;
+        ctx.lineCap = 'round';
+        let grad = ctx.createLinearGradient(20, cy, 160, cy);
+        grad.addColorStop(0, color);
+        grad.addColorStop(1, '#e0e7ff');
+        ctx.strokeStyle = grad;
+        ctx.arc(cx, cy, 65, Math.PI, Math.PI + Math.PI * value / 100, false);
+        ctx.stroke();
+        ctx.restore();
+        // Draw ticks
+        ctx.save();
+        for (let i = 0; i <= 10; i++) {
+          const angle = Math.PI + (i * Math.PI / 10);
+          const tx1 = cx + Math.cos(angle) * 65;
+          const ty1 = cy + Math.sin(angle) * 65;
+          const tx2 = cx + Math.cos(angle) * 70;
+          const ty2 = cy + Math.sin(angle) * 70;
+          ctx.beginPath();
+          ctx.moveTo(tx1, ty1);
+          ctx.lineTo(tx2, ty2);
+          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = '#b6d2f7';
+          ctx.stroke();
+        }
+        ctx.restore();
+        // Draw value perfectly centered in the gauge arc
+        ctx.save();
+        // Calculate the vertical center between the arc's top and the bottom of the canvas
+  // Arc is from (cx, cy-65) to (cx, cy), so center is about (cx, cy-32)
+  // Move the value a bit lower for better alignment
+  const valueFont = 'bold 25px Inter, Arial, sans-serif';
+  ctx.font = valueFont;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+  ctx.shadowColor = 'rgba(90,108,255,0.08)';
+  ctx.shadowBlur = 1.5;
+  // Move the value down by 10px
+  ctx.fillText(value + '%', cx, cy - 22);
+        ctx.restore();
+      }
+  // Dynamic Sentiment Insights
+  {% set total_calls = call_list|length %}
+  {% set pos_count = call_list|selectattr('sentiment', 'equalto', 'Positive')|list|length %}
+  {% set neg_count = call_list|selectattr('sentiment', 'equalto', 'Negative')|list|length %}
+  {% set pos_rate = (pos_count / total_calls * 100) if total_calls > 0 else 0 %}
+  {% set neg_rate = (neg_count / total_calls * 100) if total_calls > 0 else 0 %}
+  drawGauge('positiveGauge', {{ pos_rate|round(2) }}, '#22c55e');
+  drawGauge('negativeGauge', {{ neg_rate|round(2) }}, '#ef4444');
+    };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

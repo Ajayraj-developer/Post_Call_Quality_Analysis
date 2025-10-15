@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sentiment Analytics - Voice Quality Insights</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+<script type="module" src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2Fvoicequal3480back.builtwithrocket.new&_be=https%3A%2F%2Fapplication.rocket.new&_v=0.1.8"></script>
+</head>
+<body class="bg-surface min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-secondary-200 sticky top-0 z-50">
+        <div class="max-w-full px-6 py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo and Title -->
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-8 h-8 text-primary-600" viewBox="0 0 32 32" fill="currentColor">
+                            <path d="M16 2L4 8v16l12 6 12-6V8L16 2zm0 4l8 4v12l-8 4-8-4V10l8-4z"/>
+                            <circle cx="16" cy="16" r="4"/>
+                        </svg>
+                        <div>
+                            <h1 class="text-xl font-bold text-text-primary">Echoverge</h1>
+                            <p class="text-xs text-text-secondary">Wipro Live Workspace</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="{{ url_for('dashboard') }}" class="px-3 py-2 text-sm font-medium {% if request.endpoint == 'dashboard' %}text-primary-600 bg-primary-50{% else %}text-text-secondary hover:text-primary-600 hover:bg-primary-50{% endif %} rounded-lg transition-colors">
+                        Overview
+                    </a>
+                    <a href="{{ url_for('real_time_operations') }}" class="px-3 py-2 text-sm font-medium {% if request.endpoint == 'real_time_operations' %}text-primary-600 bg-primary-50{% else %}text-text-secondary hover:text-primary-600 hover:bg-primary-50{% endif %} rounded-lg transition-colors">
+                        Real Time Operations
+                    </a>
+                    <a href="{{ url_for('agent_performance') }}" class="px-3 py-2 text-sm font-medium {% if request.endpoint == 'agent_performance' %}text-primary-600 bg-primary-50{% else %}text-text-secondary hover:text-primary-600 hover:bg-primary-50{% endif %} rounded-lg transition-colors">
+                        Agent Performance
+                    </a>
+                    <a href="{{ url_for('sentiment_analytics') }}" class="px-3 py-2 text-sm font-medium {% if request.endpoint == 'sentiment_analytics' %}text-primary-600 bg-primary-50{% else %}text-text-secondary hover:text-primary-600 hover:bg-primary-50{% endif %} rounded-lg transition-colors">
+                        Sentiment Analytics
+                    </a>
+                    <a href="{{ url_for('executive_overview') }}" class="px-3 py-2 text-sm font-medium {% if request.endpoint == 'executive_overview' %}text-primary-600 bg-primary-50{% else %}text-text-secondary hover:text-primary-600 hover:bg-primary-50{% endif %} rounded-lg transition-colors">
+                        Executive Overview
+                    </a>
+                </nav>
+
+                <!-- Controls -->
+                <div class="flex items-center space-x-4">
+                    <!-- Date Range Picker -->
+                    <select id="dateRange" class="px-3 py-2 text-sm border border-secondary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="today">Today</option>
+                        <option value="wtd">Week to Date</option>
+                        <option value="mtd">Month to Date</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+
+                    <!-- Sentiment Threshold -->
+                    <select id="sentimentThreshold" class="px-3 py-2 text-sm border border-secondary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="all">All Sentiments</option>
+                        <option value="positive">Positive Only</option>
+                        <option value="negative">Negative Only</option>
+                        <option value="neutral">Neutral Only</option>
+                    </select>
+
+                    <!-- Customer Segment Filter -->
+                    <select id="customerSegment" class="px-3 py-2 text-sm border border-secondary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="all">All Segments</option>
+                        <option value="premium">Premium</option>
+                        <option value="standard">Standard</option>
+                        <option value="new">New Customers</option>
+                    </select>
+
+                    <!-- Real-time Updates -->
+                    <button id="realTimeUpdates" class="flex items-center space-x-2 px-3 py-2 text-sm bg-success-50 text-success-600 rounded-lg hover:bg-success-100 transition-colors">
+                        <div class="w-2 h-2 bg-success-500 rounded-full animate-pulse"></div>
+                        <span>Live Updates</span>
+                    </button>
+
+                    <!-- Mobile Menu -->
+                    <button class="md:hidden p-2 text-text-secondary hover:text-primary-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-full px-6 py-6">
+        <!-- Sentiment KPI Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Overall Emotional Quotient -->
+            <div class="glass-card p-6 floating-element">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-primary-50 rounded-lg">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-medium text-success-600 bg-success-50 px-2 py-1 rounded-full">+2.3</span>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-2xl font-bold text-text-primary">7.8</p>
+                    <p class="text-sm text-text-secondary">Emotional Quotient</p>
+                    <p class="text-xs text-text-secondary">Target: >7.5</p>
+                </div>
+            </div>
+
+            <!-- Positive Sentiment Rate -->
+            <div class="glass-card p-6 floating-element">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-success-50 rounded-lg">
+                        <svg class="w-6 h-6 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-medium text-success-600 bg-success-50 px-2 py-1 rounded-full">+5.2%</span>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-2xl font-bold text-text-primary">68.4%</p>
+                    <p class="text-sm text-text-secondary">Positive Sentiment</p>
+                    <p class="text-xs text-text-secondary">1,247 calls</p>
+                </div>
+            </div>
+
+            <!-- Negative Sentiment Rate -->
+            <div class="glass-card p-6 floating-element">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-error-50 rounded-lg">
+                        <svg class="w-6 h-6 text-error-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-medium text-success-600 bg-success-50 px-2 py-1 rounded-full">-1.8%</span>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-2xl font-bold text-text-primary">18.7%</p>
+                    <p class="text-sm text-text-secondary">Negative Sentiment</p>
+                    <p class="text-xs text-text-secondary">341 calls</p>
+                </div>
+            </div>
+
+            <!-- Sentiment Trend -->
+            <div class="glass-card p-6 floating-element">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-accent-50 rounded-lg">
+                        <svg class="w-6 h-6 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-medium text-success-600 bg-success-50 px-2 py-1 rounded-full">Improving</span>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-2xl font-bold text-text-primary">+12.9%</p>
+                    <p class="text-sm text-text-secondary">Trend Direction</p>
+                    <p class="text-xs text-text-secondary">vs. last week</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Grid -->
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+            <!-- Left Sidebar - Real-time Sentiment Gauge -->
+            <div class="xl:col-span-1 space-y-6">
+                <!-- Live Sentiment Gauge -->
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-text-primary">Live Sentiment</h3>
+                            <p class="text-sm text-text-secondary">Real-time monitoring</p>
+                        </div>
+                        <div class="w-2 h-2 bg-success-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <div class="relative h-48 flex items-center justify-center">
+                        <canvas id="sentimentGauge" class="w-full h-full"></canvas>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <p class="text-2xl font-bold text-success-600">7.8</p>
+                            <p class="text-xs text-text-secondary">Current Score</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-text-secondary">Positive Threshold</span>
+                            <span class="text-success-600 font-medium">7.0+</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-text-secondary">Negative Threshold</span>
+                            <span class="text-error-600 font-medium"><4.0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sentiment Alerts -->
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-text-primary">Sentiment Alerts</h3>
+                            <p class="text-sm text-text-secondary">Threshold breaches</p>
+                        </div>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-warning-50 text-warning-600">
+                            2 Active
+                        </span>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-error-50 border border-error-100 rounded-lg">
+                            <div class="flex items-start space-x-3">
+                                <svg class="w-5 h-5 text-error-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-error-700">Low Sentiment Alert</p>
+                                    <p class="text-xs text-error-600 mt-1">Agent Sarah J. - Score: 3.2</p>
+                                    <button class="text-xs text-error-600 hover:text-error-700 font-medium mt-2">
+                                        View Call →
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-warning-50 border border-warning-100 rounded-lg">
+                            <div class="flex items-start space-x-3">
+                                <svg class="w-5 h-5 text-warning-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-warning-700">Trend Decline</p>
+                                    <p class="text-xs text-warning-600 mt-1">15% drop in last hour</p>
+                                    <button class="text-xs text-warning-600 hover:text-warning-700 font-medium mt-2">
+                                        Investigate →
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Keywords -->
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-text-primary">Top Keywords</h3>
+                            <p class="text-sm text-text-secondary">Emotional context</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-success-600 bg-success-50 px-2 py-1 rounded-lg">excellent</span>
+                            <span class="text-xs text-text-secondary">247 mentions</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-success-600 bg-success-50 px-2 py-1 rounded-lg">helpful</span>
+                            <span class="text-xs text-text-secondary">189 mentions</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-error-600 bg-error-50 px-2 py-1 rounded-lg">frustrated</span>
+                            <span class="text-xs text-text-secondary">156 mentions</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-success-600 bg-success-50 px-2 py-1 rounded-lg">satisfied</span>
+                            <span class="text-xs text-text-secondary">134 mentions</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-error-600 bg-error-50 px-2 py-1 rounded-lg">disappointed</span>
+                            <span class="text-xs text-text-secondary">98 mentions</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="xl:col-span-3 space-y-6">
+                <!-- Sentiment Over Time Chart -->
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-text-primary">Sentiment Trends & Call Volume</h3>
+                            <p class="text-sm text-text-secondary">Dual-axis correlation analysis</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-1">
+                                <div class="w-3 h-3 bg-primary-500 rounded-full"></div>
+                                <span class="text-xs text-text-secondary">Sentiment Score</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <div class="w-3 h-3 bg-accent-500 rounded-full"></div>
+                                <span class="text-xs text-text-secondary">Call Volume</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative h-80">
+                        <canvas id="sentimentTrendChart" class="w-full h-full"></canvas>
+                    </div>
+                    <div class="mt-4 flex items-center justify-between text-xs text-text-secondary">
+                        <span>Last updated: 2025-09-29 06:50:37</span>
+                        <span>Correlation: <span class="text-primary-600 font-medium">Strong Positive</span></span>
+                    </div>
+                </div>
+
+                <!-- Sentiment Distribution & Word Cloud -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Sentiment Distribution -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 class="text-lg font-semibold text-text-primary">Sentiment Distribution</h3>
+                                <p class="text-sm text-text-secondary">Current breakdown</p>
+                            </div>
+                        </div>
+                        <div class="relative h-64">
+                            <canvas id="sentimentDistribution" class="w-full h-full"></canvas>
+                        </div>
+                        <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <p class="text-lg font-bold text-success-600">68.4%</p>
+                                <p class="text-xs text-text-secondary">Positive</p>
+                            </div>
+                            <div>
+                                <p class="text-lg font-bold text-secondary-500">12.9%</p>
+                                <p class="text-xs text-text-secondary">Neutral</p>
+                            </div>
+                            <div>
+                                <p class="text-lg font-bold text-error-600">18.7%</p>
+                                <p class="text-xs text-text-secondary">Negative</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Word Cloud Visualization -->
+                    <div class="glass-card p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 class="text-lg font-semibold text-text-primary">Emotional Keywords</h3>
+                                <p class="text-sm text-text-secondary">Frequency visualization</p>
+                            </div>
+                            <button class="px-3 py-1 text-xs bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors">
+                                Refresh
+                            </button>
+                        </div>
+                        <div class="relative h-64 flex items-center justify-center bg-secondary-50 rounded-lg overflow-hidden">
+                            <!-- Simulated Word Cloud -->
+                            <div class="absolute inset-0 flex flex-wrap items-center justify-center p-4 space-x-2 space-y-1">
+                                <span class="text-success-600 font-bold text-2xl">excellent</span>
+                                <span class="text-primary-600 font-semibold text-lg">helpful</span>
+                                <span class="text-error-600 font-bold text-xl">frustrated</span>
+                                <span class="text-success-600 font-medium text-base">satisfied</span>
+                                <span class="text-accent-600 font-semibold text-lg">professional</span>
+                                <span class="text-error-600 font-medium text-base">disappointed</span>
+                                <span class="text-success-600 font-bold text-xl">amazing</span>
+                                <span class="text-secondary-600 font-medium text-sm">okay</span>
+                                <span class="text-primary-600 font-semibold text-base">efficient</span>
+                                <span class="text-error-600 font-medium text-lg">angry</span>
+                                <span class="text-success-600 font-medium text-base">grateful</span>
+                                <span class="text-warning-600 font-medium text-sm">confused</span>
+                                <span class="text-success-600 font-bold text-lg">wonderful</span>
+                                <span class="text-primary-600 font-medium text-sm">quick</span>
+                                <span class="text-error-600 font-medium text-base">upset</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between text-xs text-text-secondary">
+                            <span>Based on 1,823 calls</span>
+                            <span>Updated: Real-time</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Call Analysis Table -->
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-text-primary">Detailed Call Analysis</h3>
+                            <p class="text-sm text-text-secondary">Individual interaction insights</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button class="px-3 py-1 text-xs bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors">
+                                Filter by Sentiment
+                            </button>
+                            <button class="px-3 py-1 text-xs bg-secondary-50 text-secondary-600 rounded-lg hover:bg-secondary-100 transition-colors">
+                                Export Data
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-secondary-200">
+                                    <th class="text-left py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Call ID</th>
+                                    <th class="text-left py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Agent</th>
+                                    <th class="text-left py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Sentiment</th>
+                                    <th class="text-left py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">EQ Score</th>
+                                    <th class="text-left py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Voice Level</th>
+                                    <th class="text-left py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Duration</th>
+                                    <th class="text-left py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Customer Feedback</th>
+                                    <th class="text-left py-3 px-4 text-xs font-medium text-text-secondary uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-secondary-100">
+                                <tr class="hover:bg-secondary-50 transition-colors">
+                                    <td class="py-3 px-4 text-sm font-mono text-text-primary">#S2025-0001</td>
+                                    <td class="py-3 px-4 text-sm text-text-primary">Sarah Johnson</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-50 text-success-600">
+                                            Positive
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm font-bold text-success-600">8.7</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-50 text-success-600">
+                                            Normal
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm text-text-primary">04:32</td>
+                                    <td class="py-3 px-4 text-sm text-text-secondary max-w-xs truncate">"Excellent service, very helpful agent"</td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-xs text-primary-600 hover:text-primary-700 font-medium">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-secondary-50 transition-colors">
+                                    <td class="py-3 px-4 text-sm font-mono text-text-primary">#S2025-0002</td>
+                                    <td class="py-3 px-4 text-sm text-text-primary">Michael Chen</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-error-50 text-error-600">
+                                            Negative
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm font-bold text-error-600">3.2</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-error-50 text-error-600">
+                                            Elevated
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm text-text-primary">07:18</td>
+                                    <td class="py-3 px-4 text-sm text-text-secondary max-w-xs truncate">"Very frustrated with the wait time"</td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-xs text-primary-600 hover:text-primary-700 font-medium">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-secondary-50 transition-colors">
+                                    <td class="py-3 px-4 text-sm font-mono text-text-primary">#S2025-0003</td>
+                                    <td class="py-3 px-4 text-sm text-text-primary">Emily Rodriguez</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-50 text-success-600">
+                                            Positive
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm font-bold text-success-600">7.9</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-50 text-success-600">
+                                            Normal
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm text-text-primary">03:45</td>
+                                    <td class="py-3 px-4 text-sm text-text-secondary max-w-xs truncate">"Quick resolution, thank you"</td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-xs text-primary-600 hover:text-primary-700 font-medium">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-secondary-50 transition-colors">
+                                    <td class="py-3 px-4 text-sm font-mono text-text-primary">#S2025-0004</td>
+                                    <td class="py-3 px-4 text-sm text-text-primary">David Park</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary-50 text-secondary-600">
+                                            Neutral
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm font-bold text-secondary-600">5.4</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-50 text-success-600">
+                                            Normal
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm text-text-primary">02:56</td>
+                                    <td class="py-3 px-4 text-sm text-text-secondary max-w-xs truncate">"Issue resolved, no complaints"</td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-xs text-primary-600 hover:text-primary-700 font-medium">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-secondary-50 transition-colors">
+                                    <td class="py-3 px-4 text-sm font-mono text-text-primary">#S2025-0005</td>
+                                    <td class="py-3 px-4 text-sm text-text-primary">Lisa Thompson</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-50 text-success-600">
+                                            Positive
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm font-bold text-success-600">9.1</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-50 text-success-600">
+                                            Normal
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm text-text-primary">05:12</td>
+                                    <td class="py-3 px-4 text-sm text-text-secondary max-w-xs truncate">"Outstanding support, highly satisfied"</td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-xs text-primary-600 hover:text-primary-700 font-medium">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-4 flex items-center justify-between">
+                        <p class="text-sm text-text-secondary">Showing 5 of 1,823 calls</p>
+                        <div class="flex items-center space-x-2">
+                            <button class="px-3 py-1 text-xs border border-secondary-200 rounded-lg hover:bg-secondary-50 transition-colors">
+                                Previous
+                            </button>
+                            <button class="px-3 py-1 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Navigation -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-secondary-200 px-4 py-2">
+        <div class="flex justify-around">
+            <a href="real_time_operations.html" class="flex flex-col items-center py-2 px-3 text-text-secondary">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <span class="text-xs mt-1">Real Time</span>
+            </a>
+            <a href="agent_performance.html" class="flex flex-col items-center py-2 px-3 text-text-secondary">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <span class="text-xs mt-1">Agents</span>
+            </a>
+            <a href="sentiment_analytics.html" class="flex flex-col items-center py-2 px-3 text-primary-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="text-xs mt-1">Sentiment</span>
+            </a>
+            <a href="executive_overview.html" class="flex flex-col items-center py-2 px-3 text-text-secondary">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span class="text-xs mt-1">Executive</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Sentiment Gauge Chart
+        const gaugeCtx = document.getElementById('sentimentGauge').getContext('2d');
+        const sentimentGauge = new Chart(gaugeCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [78, 22], // 78% of 10 (7.8 score)
+                    backgroundColor: ['#10B981', '#E5E7EB'],
+                    borderWidth: 0,
+                    cutout: '75%',
+                    circumference: 180,
+                    rotation: 270
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
+                }
+            }
+        });
+
+        // Sentiment Trend Chart
+        const trendCtx = document.getElementById('sentimentTrendChart').getContext('2d');
+        const sentimentTrendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'],
+                datasets: [{
+                    label: 'Sentiment Score',
+                    data: [7.2, 7.5, 7.8, 7.6, 7.9, 8.1, 7.7, 7.4, 7.8, 8.0, 7.8, 7.8],
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Call Volume',
+                    data: [45, 67, 89, 112, 134, 156, 178, 165, 142, 128, 98, 76],
+                    borderColor: '#0EA5E9',
+                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#3B82F6',
+                        borderWidth: 1,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#64748B',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        min: 0,
+                        max: 10,
+                        grid: {
+                            color: 'rgba(203, 213, 225, 0.3)'
+                        },
+                        ticks: {
+                            color: '#64748B',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        min: 0,
+                        max: 200,
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        ticks: {
+                            color: '#64748B',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+
+        // Sentiment Distribution Chart
+        const distributionCtx = document.getElementById('sentimentDistribution').getContext('2d');
+        const sentimentDistribution = new Chart(distributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Positive', 'Neutral', 'Negative'],
+                datasets: [{
+                    data: [68.4, 12.9, 18.7],
+                    backgroundColor: ['#10B981', '#64748B', '#DC2626'],
+                    borderWidth: 0,
+                    cutout: '60%'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#3B82F6',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Real-time updates simulation
+        let realTimeEnabled = true;
+
+        function updateSentimentData() {
+            if (!realTimeEnabled) return;
+
+            // Update gauge
+            const currentScore = 7.8 + (Math.random() - 0.5) * 0.4;
+            const gaugeValue = (currentScore / 10) * 100;
+            sentimentGauge.data.datasets[0].data = [gaugeValue, 100 - gaugeValue];
+            sentimentGauge.update('none');
+
+            // Update trend chart
+            const newSentimentData = sentimentTrendChart.data.datasets[0].data.map(value => 
+                Math.max(6.0, Math.min(9.0, value + (Math.random() - 0.5) * 0.2))
+            );
+            const newVolumeData = sentimentTrendChart.data.datasets[1].data.map(value => 
+                Math.max(30, Math.min(200, value + (Math.random() - 0.5) * 10))
+            );
+            
+            sentimentTrendChart.data.datasets[0].data = newSentimentData;
+            sentimentTrendChart.data.datasets[1].data = newVolumeData;
+            sentimentTrendChart.update('none');
+
+            // Update timestamp
+            const now = new Date();
+            const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+            document.querySelector('.mt-4 .text-xs span').textContent = `Last updated: ${timestamp}`;
+        }
+
+        // Start real-time updates
+        setInterval(updateSentimentData, 5000);
+
+        // Toggle real-time updates
+        document.getElementById('realTimeUpdates').addEventListener('click', function() {
+            realTimeEnabled = !realTimeEnabled;
+            const button = this;
+            
+            if (realTimeEnabled) {
+                button.innerHTML = '<div class="w-2 h-2 bg-success-500 rounded-full animate-pulse"></div><span>Live Updates</span>';
+                button.className = 'flex items-center space-x-2 px-3 py-2 text-sm bg-success-50 text-success-600 rounded-lg hover:bg-success-100 transition-colors';
+            } else {
+                button.innerHTML = '<div class="w-2 h-2 bg-secondary-400 rounded-full"></div><span>Updates Paused</span>';
+                button.className = 'flex items-center space-x-2 px-3 py-2 text-sm bg-secondary-50 text-secondary-600 rounded-lg hover:bg-secondary-100 transition-colors';
+            }
+        });
+
+        // Filter event listeners
+        document.getElementById('dateRange').addEventListener('change', function(e) {
+            console.log('Date range changed to:', e.target.value);
+        });
+
+        document.getElementById('sentimentThreshold').addEventListener('change', function(e) {
+            console.log('Sentiment threshold changed to:', e.target.value);
+        });
+
+        document.getElementById('customerSegment').addEventListener('change', function(e) {
+            console.log('Customer segment changed to:', e.target.value);
+        });
+
+        // Mobile menu functionality
+        const mobileMenuButton = document.querySelector('.md\\:hidden button');
+        if (mobileMenuButton) {
+            mobileMenuButton.addEventListener('click', function() {
+                console.log('Mobile menu clicked');
+            });
+        }
+
+        // Table interaction handlers
+        document.querySelectorAll('button[class*="text-primary-600"]').forEach(button => {
+            if (button.textContent.includes('View Details')) {
+                button.addEventListener('click', function() {
+                    console.log('View details clicked for call');
+                });
+            }
+        });
+    </script>
+<script id="dhws-dataInjector" src="../public/dhws-data-injector.js"></script>
+</body>
+</html>

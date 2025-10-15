@@ -1,359 +1,268 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FAQs</title>
-    <!-- Font Awesome -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-    />
-    <!-- Bootstrap CSS -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <!-- Bootstrap Icons -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
-      rel="stylesheet"
-    />
-    <style>
-    /* FAQ Section Styling Enhancements */
-    .faq-section {
-      max-width: 1200px;
-      margin: 48px auto 0 10px;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Echoverge - FAQ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --success: #2be7a3;
+      --success-light: #e6fcf4;
+      --danger: #ff5c5c;
+      --danger-light: #ffeaea;
+      --warning: #fbbf24;
+      --warning-light: #fffbe6;
+      --primary: #5a6cff;
+      --primary-hover: #3b47b7;
+      --primary-foreground: #fff;
+      --card-border: #e5e7eb;
+      --muted: #e6f0fa;
+      --muted-foreground: #7b8190;
+      --chart-1: #5a6cff;
+      --chart-2: #2be7a3;
+      --chart-3: #fbbf24;
+      --chart-4: #a259e6;
+      --chart-5: #ff5c5c;
+      --sidebar-bg: #ffffff;
+      --navbar-bg: #ffffff;
+      --card-bg: #fcfcfc;
+      --shadow: 0 4px 24px 0 rgba(90,108,255,0.07), 0 1.5px 4px 0 rgba(90,108,255,0.04);
+      --font-main: 'Inter', 'Segoe UI', Arial, sans-serif;
+    }
+    body {
+      font-family: var(--font-main);
+      background: var(--muted);
+      color: #23263b;
+    }
+    .text-success { color: var(--success); }
+    .bg-success-light { background: var(--success-light); }
+    .text-danger { color: var(--danger); }
+    .bg-danger-light { background: var(--danger-light); }
+    .text-warning { color: var(--warning); }
+    .bg-warning-light { background: var(--warning-light); }
+    .text-primary { color: var(--primary); }
+    .bg-primary { background: var(--primary); }
+    .bg-primary-hover { background: var(--primary-hover); }
+    .text-primary-foreground { color: var(--primary-foreground); }
+    .border-card-border { border-color: var(--card-border); }
+    .bg-muted { background: var(--muted); }
+    .text-muted-foreground { color: var(--muted-foreground); }
+    .sidebar-gradient {
+      background: var(--sidebar-bg);
+      box-shadow: var(--shadow);
+    }
+    .navbar-gradient {
+      background: var(--navbar-bg);
+      box-shadow: var(--shadow);
+    }
+    .card-gradient {
+      background: var(--card-bg);
+      box-shadow: var(--shadow);
+    }
+    .kpi-icon {
+      background: linear-gradient(135deg, #5a6cff 0%, #2be7a3 100%);
+      box-shadow: 0 2px 8px 0 rgba(90,108,255,0.10);
+    }
+    .kpi-icon-alt {
+      background: linear-gradient(135deg, #fbbf24 0%, #ff5c5c 100%);
+      box-shadow: 0 2px 8px 0 rgba(251,191,36,0.10);
+    }
+    .kpi-icon-success {
+      background: linear-gradient(135deg, #2be7a3 0%, #5a6cff 100%);
+      box-shadow: 0 2px 8px 0 rgba(43,231,163,0.10);
+    }
+    .kpi-icon-danger {
+      background: linear-gradient(135deg, #ff5c5c 0%, #fbbf24 100%);
+      box-shadow: 0 2px 8px 0 rgba(255,92,92,0.10);
+    }
+    .kpi-icon-warning {
+      background: linear-gradient(135deg, #fbbf24 0%, #2be7a3 100%);
+      box-shadow: 0 2px 8px 0 rgba(251,191,36,0.10);
+    }
+    .kpi-icon-purple {
+      background: linear-gradient(135deg, #a259e6 0%, #5a6cff 100%);
+      box-shadow: 0 2px 8px 0 rgba(162,89,230,0.10);
+    }
+    .kpi-icon-blue {
+      background: linear-gradient(135deg, #5a6cff 0%, #a259e6 100%);
+      box-shadow: 0 2px 8px 0 rgba(90,108,255,0.10);
+    }
+    .kpi-icon-green {
+      background: linear-gradient(135deg, #2be7a3 0%, #fbbf24 100%);
+      box-shadow: 0 2px 8px 0 rgba(43,231,163,0.10);
+    }
+    .kpi-icon-orange {
+      background: linear-gradient(135deg, #fbbf24 0%, #ff5c5c 100%);
+      box-shadow: 0 2px 8px 0 rgba(251,191,36,0.10);
+    }
+    .kpi-icon-red {
+      background: linear-gradient(135deg, #ff5c5c 0%, #a259e6 100%);
+      box-shadow: 0 2px 8px 0 rgba(255,92,92,0.10);
+    }
+    .kpi-icon-user {
+      background: linear-gradient(135deg, #2be7a3 0%, #5a6cff 100%);
+      box-shadow: 0 2px 8px 0 rgba(43,231,163,0.10);
+    }
+    .table-header {
+      background: linear-gradient(90deg, #f8fafc 0%, #e9eefd 100%);
+    }
+    .table-row {
       background: #fff;
-      border-radius: 18px;
-      box-shadow: 0 6px 32px rgba(52,152,253,0.10), 0 1.5px 6px rgba(52,152,253,0.06);
-      padding: 44px 38px 38px 38px;
-      position: relative;
+      transition: background 0.2s;
     }
-    .faq-title {
-      font-size: 2.3rem;
-      font-weight: 800;
-      color: #3498fd;
-      margin-bottom: 36px;
-      text-align: center;
-      letter-spacing: 0.5px;
-      text-shadow: 0 2px 8px rgba(52,152,253,0.08);
+    .table-row:hover {
+      background: #f3f6fd;
     }
-    .accordion-item {
-      border-radius: 14px !important;
-      margin-bottom: 18px;
-      border: none;
-      box-shadow: 0 2px 12px rgba(52,152,253,0.07);
-      overflow: hidden;
-      background: #f8fbff;
-      transition: box-shadow 0.2s;
+    .shadow-smooth {
+      box-shadow: var(--shadow);
     }
-    .accordion-item:focus-within, .accordion-item:hover {
-      box-shadow: 0 4px 18px rgba(52,152,253,0.13);
+    .gauge-bg {
+      background: #f0f6ff;
+      border-radius: 1.5rem;
+      box-shadow: var(--shadow);
     }
-    .accordion-button {
-      font-size: 1.13rem;
-      font-weight: 700;
-      color: #222;
-      background: #eaf4ff;
-      border: none;
-      padding: 18px 24px;
-      transition: background 0.18s, color 0.18s;
-    }
-    .accordion-button:not(.collapsed) {
-      color: #fff;
-      background: linear-gradient(90deg, #3498fd 0%, #6ec6ff 100%);
-      box-shadow: none;
-    }
-    .accordion-body {
-      background: #fff;
-      font-size: 1.07rem;
-      color: #333;
-      padding: 20px 28px 18px 28px;
-      border-top: 1px solid #e3e6f0;
-      line-height: 1.7;
-    }
-    .accordion-header {
-      background: transparent;
-    }
-    @media (max-width: 700px) {
-      .faq-section {
-        padding: 18px 4px 18px 4px;
-      }
-      .faq-title {
-        font-size: 1.4rem;
-      }
-      .accordion-body {
-        padding: 14px 8px 12px 8px;
-      }
-    }
-        .sidebar nav ul li a {
-            font-size: 1.18rem !important;
-            font-weight: 700 !important;
-        }
-        ::-webkit-scrollbar {
-            width: 10px;
-            background: var(--light);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #d1d5db;
-            border-radius: 8px;
-            border: 2px solid #f8f9fa;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #b0b8c1;
-        }
-        html {
-            scrollbar-color: #d1d5db #f8f9fa;
-            scrollbar-width: thin;
-        }
-        html, body, input, select, button, textarea, .panel, .panel-title, .card, .card-title, .card-value, .card-trend, .legend, .perf-label, .perf-bar, .sentiment-list, .sentiment-icon, .user-info, .user-details, .user-name, .user-role, .header-title, .header-icon, .summary-cards, .main-content, .container, .perf-bar-bg, .performance-list, .filter-label, .filter-select, .filter-btn, .filter-reset {
-            font-family: 'Inter', Arial, sans-serif !important;
-            letter-spacing: 0;
-        }
-        body {
-            background: #fafbfc;
-            margin: 0;
-            padding: 0;
-        }
-        .navbar {
-            position: fixed !important;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1050;
-        }
-        .sidebar {
-            position: fixed;
-            top: 88px;
-            left: 0;
-            height: calc(100vh - 64px);
-            width: 270px;
-            background: #fff;
-            border-right: 1px solid #e5e7eb;
-            display: flex;
-            flex-direction: column;
-            padding-top: 0;
-            z-index: 1040;
-        }
-        .content {
-            margin-left: 270px;
-            min-height: 100vh;
-            background: #fff;
-        }
-        @media (max-width: 900px) {
-            .navbar {
-                position: static !important;
-            }
-            .sidebar {
-                position: static;
-                width: 100%;
-                height: auto;
-                border-right: none;
-                border-bottom: 1px solid #e5e7eb;
-                top: 0;
-            }
-            .content {
-                margin-left: 0 !important;
-                margin-top: 0 !important;
-            }
-        }
-    </style>
-  </head>
-  <body>
-    <div class="content w-100">
-        <!-- Navbar (copied from dashboard2.html) -->
-        <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0" style="box-shadow: 0 2px 5px rgba(0,0,0,0.08);">
-            <a href="{{ url_for('dashboard') }}" class="navbar-brand d-flex align-items-center mx-4">
-                <img src="../static/img/wipro.png" alt="Post Call Logo" style="height: 70px; width: auto; margin-right: 18px; border-radius: 60px; margin-left: -16px; margin-top: -8px;" />
-            </a>
-            <div class="navbar-nav align-items-center ms-auto">
-                <div class="nav-item dropdown">
-                    <a href="#" class="nav-link dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown" style="padding:0;">
-                        <button id="notifyBtn" class="btn btn-outline-primary me-3">
-                            <i class="fa fa-bell me-2"></i>
-                            <span class="d-none d-lg-inline-flex">Notifications</span>
-                        </button>
-                        <img class="rounded-circle me-2" src="../static/img/logoo.png" alt="Logo" style="width: 40px; height: 40px;">
-                        <span class="d-none d-lg-inline-flex flex-column align-items-start" style="line-height:1.1;">
-                            <span id="username" style="font-weight: bolder;">ECHOVERGE</span>
-                            <span style="font-size: 12px; color: #6c757d; text-decoration: none; margin-left:0;">Developed by GenAI Foundry</span>
-                        </span>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end">
-                        <div class="dropdown-item" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
-                            <div style="font-weight: 600; color: #333;">{{ user.name if user else 'Guest User' }}</div>
-                            <div style="font-size: 12px; color: #6c757d;">{{ user.preferred_username if user else '' }}</div>
-                        </div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-user-circle"></i>Profile
-                        </a>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-cog"></i>Settings
-                        </a>
-                        <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: #dc3545;">
-                            <i class="fas fa-sign-out-alt"></i>Logout
-                        </a>
-                    </div>
-                </div>
+  </style>
+</head>
+<body class="bg-[#e6f0fa] min-h-screen text-gray-900">
+  <!-- Header (matches dashboard-static) -->
+  <header class="bg-white border-b border-secondary-200 sticky top-0 z-50">
+    <div class="max-w-full px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-3">
+            <img src="{{ url_for('static', filename='img/logoo.png') }}" alt="Echoverge Logo" class="w-8 h-8" style="object-fit:contain;" />
+            <div>
+              <h1 class="text-xl font-bold text-text-primary">Echoverge</h1>
+              <p class="text-xs text-text-secondary">Wipro Live Workspace</p>
             </div>
-        </nav>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var notifyBtn = document.getElementById('notifyBtn');
-                if (notifyBtn) {
-                    notifyBtn.onclick = function() {
-                        if (confirm("Do you confirm sending a notification email?")) {
-                            fetch('/send_notification_mail', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.message) {
-                                    alert(data.message);
-                                } else {
-                                    alert(data.error || "Failed to send email.");
-                                }
-                            })
-                            .catch(() => alert("Error sending email."));
-                        }
-                    }
-                }
-            });
-        </script>
-        <!-- Sidebar (copied from dashboard2.html) -->
-        <div class="sidebar">
-            <nav style="margin-top: 0;">
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li>
-                        <a href="{{ url_for('dashboard') }}" style="display: flex; align-items: center; padding: 16px 24px; color: #222; text-decoration: none; font-weight: 700; font-size: 1.18rem; border-left: 4px solid transparent;">
-                            <span style="margin-right: 12px; display: flex; align-items: center;">
-                                <svg width="20" height="20" fill="none" stroke="#3498fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
-                            </span> Dashboard
-                        </a>
-                    </li>
-                    <!--
-                    <li>
-                        <a href="{{ url_for('upload_audio') }}" style="display: flex; align-items: center; padding: 16px 24px; color: #222; text-decoration: none; font-weight: 700; font-size: 1.18rem; border-left: 4px solid transparent;">
-                            <span style="margin-right: 12px; display: flex; align-items: center;">
-                                <svg width="20" height="20" fill="none" stroke="#7b7f87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/><rect x="5" y="19" width="14" height="2" rx="1"/></svg>
-                            </span> Upload
-                        </a>
-                    </li>
-                    -->
-                    <li>
-                        <a href="{{ url_for('faq') }}" style="display: flex; align-items: center; padding: 16px 24px; color: #222; text-decoration: none; font-weight: 700; font-size: 1.18rem; border-left: 4px solid #3498fd; background: #f5faff;">
-                            <span style="margin-right: 12px; display: flex; align-items: center;">
-                                <svg width="20" height="20" fill="none" stroke="#7b7f87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
-                            </span> FAQ
-                        </a>
-                    </li>
-                    <li>
-                        <a href="https://vqa-live-fbapf3gudhdwgyes.southindia-01.azurewebsites.net/" target="_blank" style="display: flex; align-items: center; padding: 16px 24px; color: #222; text-decoration: none; font-weight: 700; font-size: 1.18rem; border-left: 4px solid transparent;">
-                            <span style="margin-right: 12px; display: flex; align-items: center;">
-                                <svg width="20" height="20" fill="none" stroke="#7b7f87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
-                            </span> Live board
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+          </div>
         </div>
-        <!-- FAQ Section -->
-        <div class="faq-section">
-            <div class="faq-title">Frequently Asked Questions</div>
-            <div class="accordion" id="faqAccordion">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="faq1-heading">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="true" aria-controls="faq1">
-                            <i class="bi bi-question-circle-fill me-2 text-primary"></i> What is Speech Rate (Speech Rate) and why is it important?
-                        </button>
-                    </h2>
-                    <div id="faq1" class="accordion-collapse collapse show" aria-labelledby="faq1-heading" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            Speech Rate, also known as Zero Crossing Rate (ZCR), measures how quickly a person is speaking during a call. A balanced speech rate indicates clarity and calmness, while a very high or low rate may signal stress, confusion, or disengagement. Monitoring this helps assess agent composure and communication effectiveness.
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="faq2-heading">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false" aria-controls="faq2">
-                            <i class="bi bi-emoji-smile-fill me-2 text-success"></i> What are Valence, Arousal, and Dominance (VAD) scores?
-                        </button>
-                    </h2>
-                    <div id="faq2" class="accordion-collapse collapse" aria-labelledby="faq2-heading" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            <b>Valence</b> measures the positivity or negativity of emotion (happy vs. sad). <b>Arousal</b> reflects the energy or excitement level (calm vs. excited). <b>Dominance</b> indicates the sense of control or assertiveness. Together, VAD scores provide a detailed emotional profile of the conversation, helping to understand both agent and customer states.
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="faq3-heading">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false" aria-controls="faq3">
-                            <i class="bi bi-graph-up-arrow me-2 text-info"></i> How is Sentiment Analysis performed on calls?
-                        </button>
-                    </h2>
-                    <div id="faq3" class="accordion-collapse collapse" aria-labelledby="faq3-heading" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            Sentiment Analysis uses natural language processing to evaluate the emotional tone of each message in the transcript. It classifies segments as positive, neutral, or negative, and calculates overall sentiment percentages for both agent and customer. This helps track satisfaction and identify areas for improvement.
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="faq4-heading">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" aria-expanded="false" aria-controls="faq4">
-                            <i class="bi bi-emoji-sunglasses-fill me-2 text-warning"></i> What does the Calm Score represent?
-                        </button>
-                    </h2>
-                    <div id="faq4" class="accordion-collapse collapse" aria-labelledby="faq4-heading" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            The Calm Score is a measure of how calm or composed the agent sounds during the call, based on audio features. A higher calm score suggests a more relaxed and professional tone, which is desirable for customer interactions.
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="faq5-heading">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" aria-expanded="false" aria-controls="faq5">
-                            <i class="bi bi-award-fill me-2 text-danger"></i> How is the Overall Score calculated?
-                        </button>
-                    </h2>
-                    <div id="faq5" class="accordion-collapse collapse" aria-labelledby="faq5-heading" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            The Overall Score combines multiple factors: context-based sentiment, tone (calmness), SOP adherence, agent sentiment, and resolution status. Each component is weighted to reflect its importance, providing a holistic measure of call quality and agent performance.
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="faq6-heading">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6" aria-expanded="false" aria-controls="faq6">
-                            <i class="bi bi-shield-check me-2 text-primary"></i> What is SOP Adherence?
-                        </button>
-                    </h2>
-                    <div id="faq6" class="accordion-collapse collapse" aria-labelledby="faq6-heading" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            SOP Adherence checks if the agent followed Standard Operating Procedures, such as identity verification, security questions, and best practices. High adherence means the agent is compliant with company protocols, reducing risk and improving service quality.
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="faq7-heading">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7" aria-expanded="false" aria-controls="faq7">
-                            <i class="bi bi-bar-chart-fill me-2 text-success"></i> What does the Sentiment Flow chart show?
-                        </button>
-                    </h2>
-                    <div id="faq7" class="accordion-collapse collapse" aria-labelledby="faq7-heading" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            The Sentiment Flow chart visualizes how the emotional tone changes throughout the call, message by message. It helps identify key moments of positivity or negativity, agent impact, and customer reactions in real time.
-                        </div>
-                    </div>
-                </div>
+
+        <!-- Top nav (kept for consistency but hidden on this page) -->
+        <nav id="topTabs" class="hidden md:flex items-center space-x-6">
+          <a href="{{ url_for('dashboard') }}" class="px-3 py-2 text-sm font-medium rounded-lg">Overview</a>
+          <a href="{{ url_for('real_time_operations') }}" class="px-3 py-2 text-sm font-medium rounded-lg">Real Time Operations</a>
+          <a href="{{ url_for('agent_performance') }}" class="px-3 py-2 text-sm font-medium rounded-lg">Agent Performance</a>
+          <a href="{{ url_for('sentiment_analytics') }}" class="px-3 py-2 text-sm font-medium rounded-lg">Sentiment Analytics</a>
+          <a href="{{ url_for('executive_overview') }}" class="px-3 py-2 text-sm font-medium rounded-lg">Executive Overview</a>
+        </nav>
+
+        <!-- User Dropdown -->
+        <div class="flex items-center space-x-4">
+          <div class="relative" id="userDropdownWrapper">
+            <button id="userDropdownBtn" class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 focus:outline-none" aria-expanded="false" aria-haspopup="true">
+              <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+              <span class="text-sm font-medium">{{ user.name if user else 'Guest User' }}</span>
+              <svg class="w-3 h-3 text-gray-500" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+            </button>
+            <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-card-border z-50">
+              <div class="px-4 py-3 border-b border-card-border">
+                <div class="text-sm font-semibold">{{ user.name if user else 'Guest User' }}</div>
+                <div class="text-xs text-muted-foreground">{{ user.email if user and user.email else '-' }}</div>
+              </div>
+              <div class="py-2">
+                <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Profile</a>
+                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log out</a>
+              </div>
             </div>
+          </div>
         </div>
       </div>
     </div>
-    <!-- Bootstrap JS Bundle (only included once at the end of body) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
+  </header>
+
+  <style>
+    /* Hide the top nav tabs on this static FAQ page. */
+    #topTabs { display: none !important; }
+  </style>
+
+  <script>
+    // dropdown JS
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.getElementById('userDropdownBtn');
+      const menu = document.getElementById('userDropdownMenu');
+      const wrapper = document.getElementById('userDropdownWrapper');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', function(e) { e.preventDefault(); menu.classList.toggle('hidden'); });
+      document.addEventListener('click', function(e) { if (!wrapper.contains(e.target)) menu.classList.add('hidden'); });
+    });
+  </script>
+
+  <div class="flex pt-0">
+    <!-- Sidebar (matches dashboard-static) -->
+    <aside class="w-64 sidebar-gradient border-r border-card-border h-[calc(100vh-4rem)]">
+      <div class="p-6 fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] sidebar-gradient border-r border-card-border z-30 flex flex-col">
+        <nav class="space-y-2">
+          <a href="{{ url_for('dashboard') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+            <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
+            <span class="font-medium">Dashboard</span>
+          </a>
+          <a href="{{ url_for('faq') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+            <i data-lucide="help-circle" class="h-5 w-5"></i>
+            <span class="font-medium">FAQ</span>
+          </a>
+          <a href="{{ url_for('upload_audio') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+            <i data-lucide="radio" class="h-5 w-5"></i>
+            <span class="font-medium">Live Board</span>
+          </a>
+          <a href="{{ url_for('upload_audio') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+            <i data-lucide="settings" class="h-5 w-5"></i>
+            <span class="font-medium">Settings</span>
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <main class="flex-1 p-6 space-y-6">
+      <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth">
+        <h2 class="text-2xl font-semibold mb-4">Frequently Asked Questions</h2>
+        <p class="text-sm text-muted-foreground mb-6">Answers to common questions about Echoverge Post-Call Quality Analysis.</p>
+
+        <div class="space-y-4">
+          <details class="bg-white p-4 rounded-lg border border-card-border">
+            <summary class="font-medium cursor-pointer">How do I upload a call recording?</summary>
+            <div class="mt-2 text-sm text-muted-foreground">Go to the Upload page from the sidebar, choose the agent and employee audio files and a transcript (if available), then click Upload. Supported audio formats: WAV, MP3.</div>
+          </details>
+
+          <details class="bg-white p-4 rounded-lg border border-card-border">
+            <summary class="font-medium cursor-pointer">Why don't I see my recently uploaded call on the dashboard?</summary>
+            <div class="mt-2 text-sm text-muted-foreground">Processing can take a few minutes depending on file size and system load. If it doesn't appear after several minutes, check upload logs and ensure the file formats are supported.</div>
+          </details>
+
+          <details class="bg-white p-4 rounded-lg border border-card-border">
+            <summary class="font-medium cursor-pointer">What do the sentiment and calm scores mean?</summary>
+            <div class="mt-2 text-sm text-muted-foreground">Sentiment reflects the emotional tone identified in the transcript (positive, neutral, negative). The Calm Score is an audio-derived metric indicating how calm the agent sounded. Use both to assess agent-customer interactions.</div>
+          </details>
+
+          <details class="bg-white p-4 rounded-lg border border-card-border">
+            <summary class="font-medium cursor-pointer">How is SOP adherence measured?</summary>
+            <div class="mt-2 text-sm text-muted-foreground">SOP adherence looks for key checklist items in the call (identity verification, security questions, etc.) and scores adherence as a percentage of expected steps followed.</div>
+          </details>
+
+          <details class="bg-white p-4 rounded-lg border border-card-border">
+            <summary class="font-medium cursor-pointer">Who can access the dashboard and reports?</summary>
+            <div class="mt-2 text-sm text-muted-foreground">Only authorized users can access the application. Authentication is handled via Microsoft sign-in; contact your administrator to grant access.</div>
+          </details>
+
+          <details class="bg-white p-4 rounded-lg border border-card-border">
+            <summary class="font-medium cursor-pointer">How do I get help or report an issue?</summary>
+            <div class="mt-2 text-sm text-muted-foreground">Use the Contact / Team page or email support@echoverge.com. Include the call ID and timestamp for faster troubleshooting.</div>
+          </details>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    /* activate lucide icons - use same API as dashboard-static.html */
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    } else if ((window || {}).Lucide && typeof (window || {}).Lucide.replace === 'function') {
+      // fallback for alternate global name
+      (window || {}).Lucide.replace();
+    }
+  </script>
+</body>
 </html>

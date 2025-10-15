@@ -15,10 +15,68 @@ import glob
 import wave
 import re
 from apscheduler.schedulers.background import BackgroundScheduler
+
+# Initialize the scheduler instance
+scheduler = BackgroundScheduler()
 import certifi
 from pydub import AudioSegment
+
 from dotenv import load_dotenv
-load_dotenv()
+import os
+# Load .env from parent directory (project root)
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(dotenv_path)
+
+
+
+# Microsoft Authentication Configuration
+CLIENT_ID = "9297e893-98da-423c-8c1f-24c626c6c47a"
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
+AUTHORITY = "https://login.microsoftonline.com/f5791d91-daca-4d28-8700-680f7a2f8b6a"
+REDIRECT_PATH = "/getAToken"
+SCOPE = ["User.ReadBasic.All"]
+
+REDIRECT_URI = "http://localhost:5000/getAToken"
+
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'pxJ8Q~BxiUUQXC0ngGcm8FWIntjMvFRPMhQOWcrG')
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+TOKEN_CACHE_DIR = 'token_cache'
+os.makedirs(TOKEN_CACHE_DIR, exist_ok=True)
+
+
+# ...existing code...
+
+# Place these route definitions after login_required is defined
+from flask import Flask, request, render_template, jsonify, session, redirect, url_for
+from send_mail_util import send_email
+import msal
+import json
+from functools import wraps
+import os
+from analytics import PROMPTS, generate_section
+from emotion_inference import calculate_average_speech_rate, get_calm_score, get_vad_over_time
+from context_based import get_agent_employee_sentiment, parse_transcript_lines, get_sentiment_flow
+
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+from datetime import datetime
+import glob
+import wave
+import re
+from apscheduler.schedulers.background import BackgroundScheduler
+
+# Initialize the scheduler instance
+scheduler = BackgroundScheduler()
+import certifi
+from pydub import AudioSegment
+
+from dotenv import load_dotenv
+import os
+# Load .env from parent directory (project root)
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(dotenv_path)
 
 
 
@@ -95,6 +153,30 @@ def login_required(f):
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated_function
+
+# Agent Performance Page
+@app.route('/agent_performance')
+@login_required
+def agent_performance():
+    return render_template('agent_performance.html', user=session.get("user"))
+
+# Real Time Operations Page
+@app.route('/real_time_operations')
+@login_required
+def real_time_operations():
+    return render_template('real_time_operations.html', user=session.get("user"))
+
+# Sentiment Analytics Page
+@app.route('/sentiment_analytics')
+@login_required
+def sentiment_analytics():
+    return render_template('sentiment_analytics.html', user=session.get("user"))
+
+# Executive Overview Page
+@app.route('/executive_overview')
+@login_required
+def executive_overview():
+    return render_template('executive_overview.html', user=session.get("user"))
 
 def _get_flow_file_path():
     session_id = session.get('session_id')
@@ -175,7 +257,9 @@ def logout():
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
 def upload_audio():
+
     if request.method == 'POST':
+        # ...existing POST logic...
         audio_file_agent = request.files.get('audio_file_agent')
         audio_file_employee = request.files.get('audio_file_employee')
         transcript_file = request.files.get('transcript_file')
@@ -217,7 +301,7 @@ def upload_audio():
         # Calculate speech rate (ZCR) for both audios
         avg_speech_rate_agent, segment_times_agent, segment_zcrs_agent = calculate_average_speech_rate(audio_path_agent)
         avg_speech_rate_employee, segment_times_employee, segment_zcrs_employee = calculate_average_speech_rate(audio_path_employee)
-        
+
         # Use overlapped/mixed audio for tone and VAD analysis
         mixed_audio_path = os.path.join(app.config['UPLOAD_FOLDER'], 'mixed_audio.wav')
         if os.path.exists(mixed_audio_path):
@@ -318,7 +402,7 @@ def upload_audio():
                 sop.get('security_best_practices')
             ]
             sop_steps_followed = sum(1 for s in sop_steps if s)
-        # Save all analysis and metadata to MongoDB (just like manual upload)
+        # Save all analysis and metadata to MySQL
         doc = {
             "agent_audio": os.path.basename(audio_path_agent),
             "employee_audio": os.path.basename(audio_path_employee),
@@ -351,26 +435,37 @@ def upload_audio():
             "voice_elevation_freq": voice_elevation_freq,
             "sop_steps_followed": sop_steps_followed
         }
+        from data import CallDataRepository
+        # Load DB credentials from environment variables
+        db_user = os.environ.get('DB_USER')
+        db_password = os.environ.get('DB_PASSWORD')
+        db_host = os.environ.get('DB_HOST', 'localhost')
+        db_name = os.environ.get('DB_NAME')
+        db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+        repo = CallDataRepository(db_url)
         try:
-            result = calls_collection.insert_one(doc)
+            repo.insert_call(doc)
+            # Use the 6-digit business call_id for redirect, not the SQL row id
+            return redirect(url_for('view_call', call_id=doc["call_id"]))
         except Exception as e:
-            if 'duplicate key error' in str(e):
+            if 'Duplicate entry' in str(e):
                 print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
-                result = None
+                return "Duplicate call_id not inserted.", 409
             else:
                 print(f"[ERROR] Exception inserting doc: {e}")
-                errors = []  # Ensure errors is defined
-                errors.append(f"Error inserting doc: {str(e)}")
-                result = None
-        if result:
-            call_id = str(result.inserted_id)
-            return redirect(url_for('view_call', call_id=call_id))
-        else:
-            return "Error inserting document into database.", 500
+                return f"Error inserting document into database: {str(e)}", 500
 
-    # Fetch call list for display
+    # Fetch call list for display from MySQL
+    from data import CallDataRepository
+    db_user = os.environ.get('DB_USER')
+    db_password = os.environ.get('DB_PASSWORD')
+    db_host = os.environ.get('DB_HOST', 'localhost')
+    db_name = os.environ.get('DB_NAME')
+    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+    repo = CallDataRepository(db_url)
+    call_records = repo.get_all_calls(limit=20, offset=0)
     call_list = []
-    for call in calls_collection.find().sort("created_at", -1):
+    for call in call_records:
         transcript = call.get("transcript", "")
         def extract_agent_name(transcript):
             try:
@@ -384,38 +479,24 @@ def upload_audio():
             except:
                 pass
             return "Unknown"
-        agent_name = extract_agent_name(transcript)
-        call_summary = (call.get("analysis") or {}).get("call_summary", {})
-        
+        agent_name = call.get("agent_name") or extract_agent_name(transcript)
+        call_summary = (call.get("analysis") or {}).get("call_summary", {}) if call.get("analysis") else {}
         def get_sentiment_label_and_icon(percent):
             if percent is None:
                 return ("N/A", "")
             if percent >= 66:
                 return ("Positive", "😊")
             elif percent >= 45:
-                return ("Neutral", "😐") 
+                return ("Neutral", "😐")
             else:
                 return ("Negative", "😞")
-
         agent_sentiment_percent = call.get("agent_sentiment_percent")
         sentiment_label, sentiment_icon = get_sentiment_label_and_icon(agent_sentiment_percent)
-        # Extract 6-digit call id from agent audio or transcript filename
-        call_id = None
-        agent_audio = call.get("agent_audio", "")
-        match = re.search(r"(\d{6})", agent_audio)
-        if not match:
-            emp_audio = call.get("employee_audio", "")
-            match = re.search(r"(\d{6})", emp_audio)
-        if not match:
-            pass
-        if match:
-            call_id = match.group(1)
-        else:
-            call_id = "N/A"
+        call_id = call.get("call_id", "N/A")
         call_list.append({
-            "_id": str(call.get("_id")),
+            "_id": str(call.get("id")),
             "call_id": call_id,
-            "timestamp": call.get("created_at"),  # Use actual sync time
+            "timestamp": call.get("created_at"),
             "duration": call.get("duration", "N/A"),
             "agent_name": agent_name,
             "department": call.get("department", call_summary.get("department", "N/A")),
@@ -424,8 +505,6 @@ def upload_audio():
             "sentiment": sentiment_label,
             "sentiment_icon": sentiment_icon,
             "overall_score": call.get("overall_score", "N/A"),
-            # Add any other fields needed for the table
-            # "timestamp": datetime.now()  # Removed this line
         })
     return render_template('upload.html', user=session.get("user"), call_list=call_list)
 # Set dashboard as the landing page
@@ -450,12 +529,66 @@ def send_notification_mail():
     else:
         return jsonify({'error': 'Failed to send sample email.'}), 500
 import msal
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Fetch call list for display (same as before, but for dashboard)
+    # Fetch call list from MySQL using CallDataRepository
+    from data import CallDataRepository
+    db_user = os.environ.get('DB_USER')
+    db_password = os.environ.get('DB_PASSWORD')
+    db_host = os.environ.get('DB_HOST', 'localhost')
+    db_name = os.environ.get('DB_NAME')
+    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+    repo = CallDataRepository(db_url)
+    # Filtering logic
+    from datetime import datetime, timedelta
+    filter_type = request.args.get('filter', 'total')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    # Pagination (optional, can be extended)
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    offset = (page - 1) * per_page
+    all_calls = repo.get_all_calls()
+    filtered_calls = []
+    today = datetime.utcnow().date()
+    week_start = today - timedelta(days=today.weekday())
+    month_start = today.replace(day=1)
+    def parse_date(dt):
+        if isinstance(dt, datetime):
+            return dt.date()
+        try:
+            return datetime.strptime(str(dt)[:10], '%Y-%m-%d').date()
+        except:
+            return None
+    for call in all_calls:
+        call_date = parse_date(call.get('created_at'))
+        if filter_type == 'today':
+            if call_date == today:
+                filtered_calls.append(call)
+        elif filter_type == 'wtd':
+            if call_date and week_start <= call_date <= today:
+                filtered_calls.append(call)
+        elif filter_type == 'mtd':
+            if call_date and month_start <= call_date <= today:
+                filtered_calls.append(call)
+        elif filter_type == 'custom' and start_date and end_date:
+            try:
+                sd = datetime.strptime(start_date, '%Y-%m-%d').date()
+                ed = datetime.strptime(end_date, '%Y-%m-%d').date()
+                if call_date and sd <= call_date <= ed:
+                    filtered_calls.append(call)
+            except:
+                pass
+        else:  # total or fallback
+            filtered_calls.append(call)
+    # Pagination on filtered_calls
+    call_records = filtered_calls[offset:offset+per_page]
+
     call_list = []
-    for call in calls_collection.find().sort("created_at", -1):
+    agent_stats = {}
+    for call in call_records:
         transcript = call.get("transcript", "")
         def extract_agent_name(transcript):
             try:
@@ -469,8 +602,12 @@ def dashboard():
             except:
                 pass
             return "Unknown"
-        agent_name = extract_agent_name(transcript)
-        call_summary = (call.get("analysis") or {}).get("call_summary", {})
+        agent_name = call.get("agent_name") or extract_agent_name(transcript)
+        # Skip empty or placeholder agent names
+        if not agent_name or agent_name.lower() in ["", "unknown", "agent"]:
+            continue
+        # Parse analysis/call_summary if present
+        call_summary = (call.get("analysis") or {}).get("call_summary", {}) if call.get("analysis") else {}
         def get_sentiment_label_and_icon(percent):
             if percent is None:
                 return ("N/A", "")
@@ -482,22 +619,10 @@ def dashboard():
                 return ("Negative", "😞")
         agent_sentiment_percent = call.get("agent_sentiment_percent")
         sentiment_label, sentiment_icon = get_sentiment_label_and_icon(agent_sentiment_percent)
-        import re
-        call_id = None
-        agent_audio = call.get("agent_audio", "")
-        match = re.search(r"(\d{6})", agent_audio)
-        if not match:
-            emp_audio = call.get("employee_audio", "")
-            match = re.search(r"(\d{6})", emp_audio)
-        if not match:
-            pass
-        if match:
-            call_id = match.group(1)
-        else:
-            call_id = "N/A"
+        call_id = call.get("call_id", "N/A")
         # Use sop_steps_followed from doc if present, else fallback to calculation from analysis
         sop_steps_followed = call.get('sop_steps_followed')
-        if sop_steps_followed is None:
+        if sop_steps_followed is None and call.get("analysis"):
             sop = (call.get("analysis") or {}).get("sop_adherence", {})
             sop_steps = [
                 sop.get('identity_verification'),
@@ -507,8 +632,25 @@ def dashboard():
                 sop.get('security_best_practices')
             ]
             sop_steps_followed = sum(1 for s in sop_steps if s)
+        # Aggregate stats for Top 5 Engineers
+        if agent_name not in agent_stats:
+            agent_stats[agent_name] = {
+                'overall': 0, 'sop': 0, 'voice': 0, 'tech': 0, 'speech': 0, 'count': 0
+            }
+        # Only count numeric values
+        overall_score = call.get('overall_score')
+        sop_val = sop_steps_followed
+        voice_val = call.get('voice_elevation_freq', 0)
+        tech_val = len(call.get('valence_list', [])) if call.get('valence_list') else 0
+        speech_val = call.get('avg_speech_rate', 0)
+        agent_stats[agent_name]['overall'] += overall_score if isinstance(overall_score, (int, float)) else 0
+        agent_stats[agent_name]['sop'] += sop_val if isinstance(sop_val, (int, float)) else 0
+        agent_stats[agent_name]['voice'] += voice_val if isinstance(voice_val, (int, float)) else 0
+        agent_stats[agent_name]['tech'] += tech_val if isinstance(tech_val, (int, float)) else 0
+        agent_stats[agent_name]['speech'] += speech_val if isinstance(speech_val, (int, float)) else 0
+        agent_stats[agent_name]['count'] += 1
         call_list.append({
-            "_id": str(call.get("_id")),
+            "_id": str(call.get("id")),
             "call_id": call_id,
             "timestamp": call.get("created_at"),
             "duration": call.get("duration", "N/A"),
@@ -523,10 +665,49 @@ def dashboard():
             "arousal_list": call.get("arousal_list", []),
             "agent_speech_rate": call.get("avg_speech_rate", 0),
             "voice_elevation_freq": call.get("voice_elevation_freq", "N/A"),
-            "sop_steps_followed": sop_steps_followed
+            "sop_steps_followed": sop_steps_followed,
+            "employee_sentiment_percent": call.get("employee_sentiment_percent", None)
         })
-    
-    return render_template('dashboard2.html', user=session.get("user"), call_list=call_list)
+    # Prepare Top 5 Engineers data (skip agents with count==0)
+    valid_agents = [(name, stats) for name, stats in agent_stats.items() if stats['count'] > 0]
+    sorted_agents = sorted(valid_agents, key=lambda x: (x[1]['overall']/x[1]['count'] if x[1]['count'] else 0), reverse=True)
+    top5 = []
+    for i in range(5):
+        if i < len(sorted_agents):
+            name, stats = sorted_agents[i]
+            count = stats['count'] if stats['count'] else 1
+            top5.append({
+                'name': name,
+                'overall': round(stats['overall']/count, 2),
+                'sop': round(stats['sop']/count*20, 2),
+                'voice': round(stats['voice']/count, 2),
+                'tech': round(stats['tech']/count, 2),
+                'speech': round(stats['speech']/count, 2)
+            })
+        else:
+            # Static fallback
+            static_names = ['John Smith', 'Sarah Johnson', 'Mike Thompson', 'Emily Davis', 'Robert Williams']
+            static_overall = [92, 89, 85, 94, 87]
+            static_sop = [88, 92, 79, 96, 85]
+            static_voice = [15, 12, 25, 8, 18]
+            static_tech = [95, 87, 83, 91, 89]
+            static_speech = [89, 94, 81, 97, 86]
+            top5.append({
+                'name': static_names[i],
+                'overall': static_overall[i],
+                'sop': static_sop[i],
+                'voice': static_voice[i],
+                'tech': static_tech[i],
+                'speech': static_speech[i]
+            })
+    # Ensure we pass a user dict with both name and email (preferred_username) for templates
+    sess_user = session.get("user") or {}
+    user_ctx = {
+        "name": sess_user.get("name", "Guest User"),
+        # prefer preferred_username if present, else try email key
+        "email": sess_user.get("preferred_username") or sess_user.get("email") or ''
+    }
+    return render_template('dashboard-static.html', user=user_ctx, call_list=call_list, top5_engineers=top5)
 @app.route('/team')
 def team():
     return render_template('team.html')
@@ -548,6 +729,13 @@ def sync_cloud():
     results = sync_all_calls_from_azure(storage_account_name, container_name, sas_token, download_dir)
     processed = 0
     errors = []
+    from data import CallDataRepository
+    db_user = os.environ.get('DB_USER')
+    db_password = os.environ.get('DB_PASSWORD')
+    db_host = os.environ.get('DB_HOST', 'localhost')
+    db_name = os.environ.get('DB_NAME')
+    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+    repo = CallDataRepository(db_url)
     for call in results:
         try:
             transcript_path = call['transcript']
@@ -555,7 +743,7 @@ def sync_cloud():
             emp_audio_path = call['emp_audio']
             call_id_val = call['call_id']
             # Avoid duplicate import: check if already in DB by call_id
-            if call_id_val and calls_collection.find_one({"call_id": call_id_val}):
+            if call_id_val and repo.get_call_by_call_id(call_id_val):
                 print(f"[CLOUD SYNC] Skipping duplicate set by call_id: {call_id_val}")
                 continue
             with open(transcript_path, 'r', encoding='utf-8') as f:
@@ -660,10 +848,10 @@ def sync_cloud():
                 "call_end": call_end
             }
             try:
-                calls_collection.insert_one(doc)
+                repo.insert_call(doc)
                 processed += 1
             except Exception as e:
-                if 'duplicate key error' in str(e):
+                if 'Duplicate entry' in str(e):
                     print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
                 else:
                     print(f"[ERROR] Exception inserting doc: {e}")
@@ -688,11 +876,35 @@ def sync_cloud():
 @app.route('/call/<call_id>')
 @login_required
 def view_call(call_id):
-    call = calls_collection.find_one({"_id": ObjectId(call_id)})
+    from data import CallDataRepository
+    db_user = os.environ.get('DB_USER')
+    db_password = os.environ.get('DB_PASSWORD')
+    db_host = os.environ.get('DB_HOST', 'localhost')
+    db_name = os.environ.get('DB_NAME')
+    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+    repo = CallDataRepository(db_url)
+    call = repo.get_call_by_call_id(call_id)
     if not call:
         return "Call not found", 404
+    # Format duration: show seconds if <60, else show minutes
+    raw_duration = call.get('duration')
+    if raw_duration is not None:
+        try:
+            dur_float = float(raw_duration)
+            if dur_float < 60:
+                duration_str = f"{int(dur_float)} sec"
+            else:
+                duration_str = f"{round(dur_float/60, 2)} min"
+        except Exception:
+            duration_str = str(raw_duration)
+    else:
+        duration_str = 'N/A'
     return render_template(
         'new.html',
+        duration=duration_str,
+        call_id=call.get('call_id'),
+        agent_name=call.get('agent_name'),
+        created_at=call.get('created_at'),
         transcript=call.get('transcript'),
         analysis=call.get('analysis'),
         audio_file_agent=call.get('agent_audio'),
@@ -723,6 +935,13 @@ def sync_local():
     print(f"[DEBUG] Found transcript files: {txt_files}")
     processed = 0
     errors = []
+    from data import CallDataRepository
+    db_user = os.environ.get('DB_USER')
+    db_password = os.environ.get('DB_PASSWORD')
+    db_host = os.environ.get('DB_HOST', 'localhost')
+    db_name = os.environ.get('DB_NAME')
+    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+    repo = CallDataRepository(db_url)
     for txt_path in txt_files:
         try:
             base = os.path.splitext(os.path.basename(txt_path))[0]
@@ -736,11 +955,12 @@ def sync_local():
             import re
             match = re.search(r"(\d{6})", base)
             call_id_val = match.group(1) if match else None
-            # Avoid duplicate import: check if already in DB by call_id
-            if call_id_val and calls_collection.find_one({"call_id": call_id_val}):
-                print(f"[DEBUG] Skipping duplicate set by call_id: {call_id_val}")
-                continue
-            # ...existing code for processing and inserting...
+            # Avoid duplicate import: check if already in MySQL by call_id
+            if call_id_val:
+                existing = repo.get_call_by_call_id(call_id_val)
+                if existing:
+                    print(f"[DEBUG] Skipping duplicate set by call_id: {call_id_val}")
+                    continue
             with open(txt_path, 'r', encoding='utf-8') as f:
                 transcript = f.read()
             transcript_msgs = parse_transcript_lines(transcript)
@@ -771,25 +991,21 @@ def sync_local():
             resolved_score = 0
             if analysis.get('call_summary') and analysis['call_summary'].get('resolved'):
                 resolved_score = 1 if str(analysis['call_summary']['resolved']).strip().lower() == 'yes' else 0
-            overall_score = (
-                0.4 * context_score +
-                0.3 * tone_score +
-                1.0 * sop_score +
-                1.0 * agent_score +
-                1.0 * resolved_score
-            )
+            # Calculate duration (in seconds) for agent audio
             def get_audio_duration(filepath):
                 try:
                     audio = AudioSegment.from_file(filepath)
-                    return round(len(audio) / 1000, 2)  # duration in seconds
+                    return round(len(audio) / 1000, 2)
                 except Exception:
                     return None
             duration = get_audio_duration(agent_audio_path)
+            # Extract department and topic from analysis if available
             department = None
             topic = None
             if analysis.get('call_summary'):
                 department = analysis['call_summary'].get('department')
                 topic = analysis['call_summary'].get('topic')
+            # Extract agent name from transcript
             def extract_agent_name(transcript):
                 try:
                     lines = transcript.splitlines()
@@ -803,6 +1019,7 @@ def sync_local():
                     pass
                 return "Unknown"
             agent_name = extract_agent_name(transcript)
+            # Extract timestamps from transcript
             dash_chars = r"[-–—‒−]"
             timestamps = []
             for line in transcript.splitlines():
@@ -811,6 +1028,21 @@ def sync_local():
                     timestamps.append(match.group(1))
             call_start = timestamps[0] if timestamps else datetime.utcnow().strftime('%H:%M:%S')
             call_end = timestamps[-1] if len(timestamps) > 1 else None
+            # Calculate frequency of voice elevation (arousal > threshold)
+            arousal_threshold = 0.85
+            voice_elevation_freq = sum(1 for a in arousal_list if a > arousal_threshold)
+            # Calculate SOP steps followed
+            sop_steps_followed = 0
+            if analysis.get('sop_adherence'):
+                sop = analysis['sop_adherence']
+                sop_steps = [
+                    sop.get('identity_verification'),
+                    sop.get('security_questions'),
+                    sop.get('two_factor_enabled'),
+                    sop.get('account_activity_review'),
+                    sop.get('security_best_practices')
+                ]
+                sop_steps_followed = sum(1 for s in sop_steps if s)
             doc = {
                 "agent_audio": os.path.basename(agent_audio_path),
                 "employee_audio": os.path.basename(emp_audio_path),
@@ -829,237 +1061,97 @@ def sync_local():
                 "agent_sentiment_percent": agent_sentiment_percent,
                 "employee_sentiment_percent": employee_sentiment_percent,
                 "sentiment_flow": sentiment_flow,
-                "overall_score": overall_score,
+                "overall_score": 0.4 * context_score + 0.3 * tone_score + 1.0 * sop_score + 1.0 * agent_score + 1.0 * resolved_score,
                 "duration": duration,
                 "department": department,
                 "topic": topic,
                 "agent_name": agent_name,
-                "call_id": call_id_val,  # <-- Ensure call_id is included
-                "user_name": "ScheduledSync",
-                "user_email": "",
+                "call_id": call_id_val,
+                "user_name": session.get("user", {}).get("name", "Unknown"),
+                "user_email": session.get("user", {}).get("preferred_username", ""),
                 "created_at": datetime.utcnow(),
                 "call_start": call_start,
-                "call_end": call_end
+                "call_end": call_end,
+                "voice_elevation_freq": voice_elevation_freq,
+                "sop_steps_followed": sop_steps_followed
             }
             try:
-                calls_collection.insert_one(doc)
+                repo.insert_call(doc)
                 processed += 1
             except Exception as e:
-                if 'duplicate key error' in str(e):
+                if 'Duplicate entry' in str(e):
                     print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
                 else:
                     print(f"[ERROR] Exception inserting doc: {e}")
-                    errors = []  # Ensure errors is defined
                     errors.append(f"Error inserting doc: {str(e)}")
         except Exception as e:
-            print(f"[ERROR] Exception processing {txt_path}: {e}")
+            print(f"[SYNC_LOCAL][ERROR] Exception processing {txt_path}: {e}")
             errors.append(f"Error processing {txt_path}: {str(e)}")
     if errors:
-        print(f"[DEBUG] Errors encountered: {errors}")
+        print(f"[SYNC_LOCAL] Errors encountered: {errors}")
         return jsonify({"status": "error", "processed": processed, "errors": errors}), 500
-    print(f"[DEBUG] Local sync complete. {processed} new calls imported.")
+    print(f"[SYNC_LOCAL] Local sync complete. {processed} new calls imported.")
     return jsonify({"status": "success", "processed": processed}), 200
 
+
+
+
+
+# --- Scheduled Local Sync Support ---
+current_sync_interval = {'minutes': 5}
+
 def perform_local_sync():
+    """Background job to sync local files to MySQL using CallDataRepository."""
+    from data import CallDataRepository
+    db_user = os.environ.get('DB_USER')
+    db_password = os.environ.get('DB_PASSWORD')
+    db_host = os.environ.get('DB_HOST', 'localhost')
+    db_name = os.environ.get('DB_NAME')
+    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+    repo = CallDataRepository(db_url)
     local_dir = os.path.join(os.path.dirname(__file__), 'local_sync')
-    txt_files = glob.glob(os.path.join(local_dir, '*.txt'))
-    print(f"[SCHEDULER] Scanning folder: {local_dir}")
-    print(f"[SCHEDULER] Found transcript files: {txt_files}")
-    processed = 0
-    errors = []
-    for txt_path in txt_files:
-        try:
-            base = os.path.splitext(os.path.basename(txt_path))[0]
-            agent_audio_path = os.path.join(local_dir, f'{base}_agent.wav')
-            emp_audio_path = os.path.join(local_dir, f'{base}_emp.wav')
-            print(f"[SCHEDULER] Checking set: {txt_path}, {agent_audio_path}, {emp_audio_path}")
-            if not (os.path.exists(agent_audio_path) and os.path.exists(emp_audio_path)):
-                print(f"[SCHEDULER] Skipping incomplete set: {base}")
-                continue
-            # Extract call_id from filename
-            import re
-            match = re.search(r"(\d{6})", base)
-            call_id_val = match.group(1) if match else None
-            # Avoid duplicate import: check if already in DB by call_id
-            if call_id_val and calls_collection.find_one({"call_id": call_id_val}):
-                print(f"[SCHEDULER] Skipping duplicate set by call_id: {call_id_val}")
-                continue
-            print(f"[SCHEDULER] Processing set: {base}")
-            with open(txt_path, 'r', encoding='utf-8') as f:
-                transcript = f.read()
-            transcript_msgs = parse_transcript_lines(transcript)
-            sentiment_scores = get_agent_employee_sentiment(transcript_msgs)
-            agent_sentiment_percent = sentiment_scores['agent_sentiment_percent']
-            employee_sentiment_percent = sentiment_scores['employee_sentiment_percent']
-            analysis = {}
-            if transcript.strip():
-                for section, prompt in PROMPTS.items():
-                    result = generate_section(prompt, transcript)
-                    if result:
-                        analysis[section] = result
-                    else:
-                        analysis[section] = {"error": f"Failed to parse {section} output"}
-            avg_speech_rate_agent, segment_times_agent, segment_zcrs_agent = calculate_average_speech_rate(agent_audio_path)
-            avg_speech_rate_employee, segment_times_employee, segment_zcrs_employee = calculate_average_speech_rate(emp_audio_path)
-            calm_score = get_calm_score(agent_audio_path)
-            vad_times, valence_list, arousal_list, dominance_list = get_vad_over_time(agent_audio_path)
-            sentiment_flow = get_sentiment_flow(transcript_msgs)
-            context_score = (agent_sentiment_percent + employee_sentiment_percent) / 2 / 10 if agent_sentiment_percent is not None and employee_sentiment_percent is not None else 0
-            tone_score = calm_score if calm_score is not None else 0
-            sop_score = 0
-            if analysis.get('sop_adherence'):
-                sop = analysis['sop_adherence']
-                sop_steps = [sop.get('identity_verification'), sop.get('security_questions'), sop.get('two_factor_enabled'), sop.get('account_activity_review'), sop.get('security_best_practices')]
-                sop_score = (sum(1 for s in sop_steps if s) / 5) * 1
-            agent_score = agent_sentiment_percent / 100 if agent_sentiment_percent is not None else 0
-            resolved_score = 0
-            if analysis.get('call_summary') and analysis['call_summary'].get('resolved'):
-                resolved_score = 1 if str(analysis['call_summary']['resolved']).strip().lower() == 'yes' else 0
-            overall_score = (
-                0.4 * context_score +
-                0.3 * tone_score +
-                1.0 * sop_score +
-                1.0 * agent_score +
-                1.0 * resolved_score
-            )
-            def get_audio_duration(filepath):
-                try:
-                    audio = AudioSegment.from_file(filepath)
-                    return round(len(audio) / 1000, 2)  # duration in seconds
-                except Exception:
-                    return None
-            duration = get_audio_duration(agent_audio_path)
-            department = None
-            topic = None
-            if analysis.get('call_summary'):
-                department = analysis['call_summary'].get('department')
-                topic = analysis['call_summary'].get('topic')
-            def extract_agent_name(transcript):
-                try:
-                    lines = transcript.splitlines()
-                    for line in lines:
-                        if 'Agent' in line:
-                            parts = line.split('Agent')
-                            if len(parts) > 1:
-                                name_part = parts[1].strip('():- ')
-                                return name_part.split()[0]
-                except:
-                    pass
-                return "Unknown"
-            agent_name = extract_agent_name(transcript)
-            dash_chars = r"[-–—‒−]"
-            timestamps = []
-            for line in transcript.splitlines():
-                match = re.match(r"(\d{2}:\d{2}:\d{2})\s*" + dash_chars, line)
-                if match:
-                    timestamps.append(match.group(1))
-            call_start = timestamps[0] if timestamps else datetime.utcnow().strftime('%H:%M:%S')
-            call_end = timestamps[-1] if len(timestamps) > 1 else None
-            doc = {
-                "agent_audio": os.path.basename(agent_audio_path),
-                "employee_audio": os.path.basename(emp_audio_path),
-                "transcript": transcript,
-                "analysis": analysis,
-                "segment_times_agent": segment_times_agent,
-                "segment_zcrs_agent": segment_zcrs_agent,
-                "segment_times_employee": segment_times_employee,
-                "segment_zcrs_employee": segment_zcrs_employee,
-                "avg_speech_rate": avg_speech_rate_agent,
-                "calm_score": calm_score,
-                "vad_times": vad_times,
-                "valence_list": valence_list,
-                "arousal_list": arousal_list,
-                "dominance_list": dominance_list,
-                "agent_sentiment_percent": agent_sentiment_percent,
-                "employee_sentiment_percent": employee_sentiment_percent,
-                "sentiment_flow": sentiment_flow,
-                "overall_score": overall_score,
-                "duration": duration,
-                "department": department,
-                "topic": topic,
-                "agent_name": agent_name,
-                "call_id": call_id_val,  # <-- Ensure call_id is included
-                "user_name": "ScheduledSync",
-                "user_email": "",
-                "created_at": datetime.utcnow(),
-                "call_start": call_start,
-                "call_end": call_end
-            }
-            try:
-                calls_collection.insert_one(doc)
-                processed += 1
-            except Exception as e:
-                if 'duplicate key error' in str(e):
-                    print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
-                else:
-                    print(f"[SCHEDULER][ERROR] Exception inserting doc: {e}")
-                    errors.append(f"Error inserting doc: {str(e)}")
-        except Exception as e:
-            print(f"[SCHEDULER][ERROR] Exception processing {txt_path}: {e}")
-            errors.append(f"Error processing {txt_path}: {str(e)}")
+    processed, errors = repo.sync_local_folder(local_dir, user_name=None, user_email=None, verbose=True)
     if errors:
         print(f"[SCHEDULER] Errors encountered: {errors}")
     print(f"[SCHEDULER] Local sync complete. {processed} new calls imported.")
 
-# --- MongoDB Setup ---
-MONGO_URI = ("mongodb+srv://lokesh:lokesh17@cluster0.au3rwov.mongodb.net/"
-             "?retryWrites=true&w=majority")
-client = MongoClient(
-    MONGO_URI,
-    tls=True,                  # explicit but optional; SRV implies TLS
-    tlsCAFile=certifi.where()  # <— give OpenSSL an up‑to‑date CA bundle
-)
-db = client["post_call"]
-calls_collection = db["call_data"]
-
-# Ensure unique index on call_id for hard deduplication
-try:
-    calls_collection.create_index("call_id", unique=True)
-    print("[MongoDB] Ensured unique index on call_id.")
-except Exception as e:
-    print(f"[MongoDB] Error creating unique index on call_id: {e}")
-
-# --- APScheduler Setup ---
-scheduler = BackgroundScheduler()
-# Track current sync interval (default 1 min)
-current_sync_interval = {'minutes': 1}
-
 def get_sync_job_status():
+    job = scheduler.get_job('local_sync_job')
+    interval_minutes = None
     try:
-        job = scheduler.get_job('local_sync_job')
         if job:
-            # Robustly extract interval from trigger
             trigger = job.trigger
-            interval_minutes = None
-            try:
-                # APScheduler IntervalTrigger
-                if hasattr(trigger, 'interval'):
-                    total_seconds = trigger.interval.total_seconds()
-                    if total_seconds % 60 == 0:
-                        interval_minutes = int(total_seconds // 60)
-                    else:
-                        interval_minutes = round(total_seconds / 60, 2)
+            if hasattr(trigger, 'interval'):
+                total_seconds = trigger.interval.total_seconds()
+                if total_seconds % 60 == 0:
+                    interval_minutes = int(total_seconds // 60)
                 else:
-                    print(f"[SCHEDULER][WARN] Trigger does not have 'interval': {trigger}")
-            except Exception as e:
-                print(f"[SCHEDULER][ERROR] Could not extract interval: {e}")
-            # Safely handle next_run_time
+                    interval_minutes = round(total_seconds / 60, 2)
             next_run = job.next_run_time if hasattr(job, 'next_run_time') else None
-            if next_run is not None:
-                next_run_str = str(next_run)
-            else:
-                next_run_str = "Not scheduled"
+            next_run_str = str(next_run) if next_run else "Not scheduled"
             return {
                 'running': True,
                 'next_run_time': next_run_str,
                 'interval': interval_minutes if interval_minutes is not None else current_sync_interval['minutes']
             }
-        else:
-            return {'running': False, 'next_run_time': None, 'interval': current_sync_interval['minutes']}
     except Exception as e:
         print(f"[SCHEDULER][ERROR] Exception in get_sync_job_status: {e}")
-        return {'running': False, 'next_run_time': None, 'interval': current_sync_interval['minutes']}
+    return {'running': False, 'next_run_time': None, 'interval': current_sync_interval['minutes']}
 
+
+# --- Ensure scheduler and job are always started ---
+def ensure_scheduler_job():
+    if not scheduler.get_job('local_sync_job'):
+        print("[SCHEDULER] Adding local_sync_job.")
+        scheduler.add_job(perform_local_sync, 'interval', minutes=current_sync_interval['minutes'], id='local_sync_job', replace_existing=True)
+    if not scheduler.running:
+        print("[SCHEDULER] Starting scheduler.")
+        scheduler.start()
+
+ensure_scheduler_job()
+
+
+# --- Flask routes for sync status and interval ---
 @app.route('/get_sync_status', methods=['GET'])
 @login_required
 def get_sync_status():
@@ -1069,35 +1161,31 @@ def get_sync_status():
 @app.route('/set_sync_interval', methods=['POST'])
 @login_required
 def set_sync_interval():
-    data = request.get_json()
-    minutes = int(data.get('minutes', 1))
+    # Accept both JSON and form data
+    data = request.get_json(silent=True) or request.form or {}
+    try:
+        minutes = int(data.get('minutes', 5))
+        if minutes < 1:
+            return jsonify({'status': 'error', 'message': 'Interval must be >= 1 minute'}), 400
+    except Exception:
+        return jsonify({'status': 'error', 'message': 'Invalid minutes value'}), 400
     from apscheduler.jobstores.base import JobLookupError
     try:
         scheduler.remove_job('local_sync_job')
     except JobLookupError:
-        # Job does not exist, this is fine
         pass
     except Exception as e:
         print(f"[SCHEDULER][ERROR] Could not remove job: {e}")
     try:
         scheduler.add_job(perform_local_sync, 'interval', minutes=minutes, id='local_sync_job', replace_existing=True)
         current_sync_interval['minutes'] = minutes
+        print(f"[SCHEDULER] Updated local_sync_job interval to {minutes} minutes.")
         return jsonify({'status': 'success', 'interval': minutes})
     except Exception as e:
         print(f"[SCHEDULER][ERROR] Could not add job: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# Only add the job and start scheduler in main process (not reloader)
+# Only run Flask app if main
 if __name__ == '__main__':
-    print("[SCHEDULER] Starting scheduler.")
-    if not scheduler.get_job('local_sync_job'):
-        scheduler.add_job(perform_local_sync, 'interval', minutes=current_sync_interval['minutes'], id='local_sync_job', replace_existing=True)
-    scheduler.start()
     app.run(debug=True, use_reloader=False)
 
-@app.route('/list_call_ids', methods=['GET'])
-@login_required
-def list_call_ids():
-    # List all call_id values in the MongoDB calls collection
-    call_ids = list(calls_collection.distinct('call_id'))
-    return jsonify({'call_ids': call_ids, 'count': len(call_ids)})
