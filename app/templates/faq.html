@@ -123,6 +123,35 @@
       border-radius: 1.5rem;
       box-shadow: var(--shadow);
     }
+    /* Custom scrollbar styling (WebKit + Blink) and Firefox rules */
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--primary), var(--primary-hover));
+      border-radius: 8px;
+      border: 3px solid rgba(0,0,0,0);
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      filter: brightness(0.95);
+    }
+    /* Firefox */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary) transparent;
+    }
+    .sidebar-gradient::-webkit-scrollbar {
+      width: 8px;
+    }
+    .sidebar-gradient::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(90,108,255,0.95), rgba(59,71,183,0.95));
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body class="bg-[#e6f0fa] min-h-screen text-gray-900">
@@ -195,19 +224,19 @@
     <aside class="w-64 sidebar-gradient border-r border-card-border h-[calc(100vh-4rem)]">
       <div class="p-6 fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] sidebar-gradient border-r border-card-border z-30 flex flex-col">
         <nav class="space-y-2">
-          <a href="{{ url_for('dashboard') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+          <a href="{{ url_for('dashboard') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.endpoint == 'dashboard' %}bg-primary text-primary-foreground shadow transition-all{% else %}text-gray-900 hover:bg-gray-100{% endif %}">
             <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
             <span class="font-medium">Dashboard</span>
           </a>
-          <a href="{{ url_for('faq') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+          <a href="{{ url_for('faq') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.endpoint == 'faq' %}bg-primary text-primary-foreground shadow transition-all{% else %}text-gray-900 hover:bg-gray-100{% endif %}">
             <i data-lucide="help-circle" class="h-5 w-5"></i>
             <span class="font-medium">FAQ</span>
           </a>
-          <a href="{{ url_for('upload_audio') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+          <a href="{{ url_for('upload_audio') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.endpoint == 'upload_audio' %}bg-primary text-primary-foreground shadow transition-all{% else %}text-gray-900 hover:bg-gray-100{% endif %}">
             <i data-lucide="radio" class="h-5 w-5"></i>
             <span class="font-medium">Live Board</span>
           </a>
-          <a href="{{ url_for('upload_audio') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+          <a href="{{ url_for('upload_audio') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.endpoint == 'settings' %}bg-primary text-primary-foreground shadow transition-all{% else %}text-gray-900 hover:bg-gray-100{% endif %}">
             <i data-lucide="settings" class="h-5 w-5"></i>
             <span class="font-medium">Settings</span>
           </a>

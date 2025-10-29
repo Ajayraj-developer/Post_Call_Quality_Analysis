@@ -707,14 +707,21 @@ def dashboard():
         # prefer preferred_username if present, else try email key
         "email": sess_user.get("preferred_username") or sess_user.get("email") or ''
     }
-    return render_template('dashboard-static.html', user=user_ctx, call_list=call_list, top5_engineers=top5)
+    return render_template('dashboard.html', user=user_ctx, call_list=call_list, top5_engineers=top5)
 @app.route('/team')
 def team():
     return render_template('team.html')
 @app.route('/faq')
 @login_required
 def faq():
-    return render_template('faq.html', user=session.get("user"))
+    # Ensure we pass a user dict with both name and email (preferred_username) for templates
+    sess_user = session.get("user") or {}
+    user_ctx = {
+        "name": sess_user.get("name", "Guest User"),
+        # prefer preferred_username if present, else try email key
+        "email": sess_user.get("preferred_username") or sess_user.get("email") or ''
+    }
+    return render_template('faq.html', user=user_ctx)
 @app.route('/sync_cloud', methods=['POST'])
 @login_required
 def sync_cloud():
@@ -900,7 +907,7 @@ def view_call(call_id):
     else:
         duration_str = 'N/A'
     return render_template(
-        'new.html',
+        'analytics.html',
         duration=duration_str,
         call_id=call.get('call_id'),
         agent_name=call.get('agent_name'),
