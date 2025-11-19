@@ -1,0 +1,70 @@
+<div id="global-loading-overlay" aria-hidden="true" class="hidden fixed inset-0 bg-white/60 backdrop-blur-sm z-50 flex items-center justify-center">
+  <style>
+    /* Simple centered spinner + message */
+    #global-loading-overlay .loader {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 6px solid rgba(0,0,0,0.08);
+      border-top-color: rgba(90,108,255,0.95);
+      animation: gv-spin 0.9s linear infinite;
+      box-shadow: 0 6px 18px rgba(90,108,255,0.08);
+    }
+    @keyframes gv-spin {
+      to { transform: rotate(360deg); }
+    }
+    /* Small responsive tweaks */
+    #global-loading-overlay .gv-message {
+      font-family: Inter, Arial, sans-serif;
+      color: #1f2d4d;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+  </style>
+  <div class="flex flex-col items-center">
+    <div class="loader" role="status" aria-hidden="true"></div>
+    <div class="gv-message">Loading…</div>
+  </div>
+</div>
+
+<script>
+// Site-wide loading overlay: shows on navigation and form submit
+(function(){
+  function qs(el){return document.querySelector(el)}
+  document.addEventListener('DOMContentLoaded', function(){
+    var overlay = qs('#global-loading-overlay');
+    if(!overlay) return;
+    var show = function(){ overlay.classList.remove('hidden'); overlay.setAttribute('aria-hidden','false'); };
+    var hide = function(){ overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden','true'); };
+
+    // Hide on initial load if visible for any reason
+    hide();
+
+    // Show overlay on any link click that navigates away (not anchors, not downloads, not target=_blank)
+    document.addEventListener('click', function(e){
+      try{
+        var a = e.target.closest('a');
+        if(!a) return;
+        var href = a.getAttribute('href');
+        var target = a.getAttribute('target');
+        var download = a.hasAttribute('download');
+        var noOverlay = a.dataset && a.dataset.noOverlay;
+        if(!href) return;
+        if(href.startsWith('#') || href.startsWith('javascript:') ) return;
+        if(target === '_blank' || download || noOverlay) return;
+        // allow same-page anchors (with path) to show overlay briefly
+        show();
+      }catch(err){ /* ignore */ }
+    }, true);
+
+    // Show overlay when any form is submitted
+    document.addEventListener('submit', function(e){ show(); }, true);
+
+    // Attempt to show overlay when page unloads (best-effort)
+    window.addEventListener('beforeunload', function(){ show(); });
+
+    // Hide again when pageshow (e.g., back navigation) occurs
+    window.addEventListener('pageshow', function(){ hide(); });
+  });
+})();
+</script>

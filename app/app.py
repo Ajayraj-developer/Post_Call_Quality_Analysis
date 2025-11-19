@@ -252,7 +252,7 @@ def logout():
     session.clear()
     return redirect(
         AUTHORITY + "/oauth2/v2.0/logout" +
-        "?post_logout_redirect_uri=" + url_for("login", _external=True, _scheme="http", _server="localhost:5000"))
+        "?post_logout_redirect_uri=" + url_for("login", _external=True, _scheme="https", _server="127.0.0.1:5000"))
 
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
@@ -1195,4 +1195,3 @@ def set_sync_interval():
 # Only run Flask app if main
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
-
