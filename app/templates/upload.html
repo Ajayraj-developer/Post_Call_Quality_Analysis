@@ -2,595 +2,480 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Call List - Dashboard</title>
-
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-
-  <!-- Custom CSS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Echoverge - Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-         /* Custom Scrollbar Styling */
-      ::-webkit-scrollbar {
-        width: 10px;
-        background: var(--light);
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #d1d5db;
-        border-radius: 8px;
-        border: 2px solid #f8f9fa;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #b0b8c1;
-      }
-      /* For Firefox */
-      html {
-        scrollbar-color: #d1d5db #f8f9fa;
-        scrollbar-width: thin;
-      }
-      /* Optional: FAQ section specific (if needed) */
-      .faq-section {
-        scrollbar-color: #d1d5db #f8f9fa;
-        scrollbar-width: thin;
-      }
     :root {
-      --primary: #0d6efd;
-      --light: #f8f9fa;
-      --dark: #343a40;
+      --success: #2be7a3;
+      --success-light: #e6fcf4;
+      --danger: #ff5c5c;
+      --danger-light: #ffeaea;
+      --warning: #fbbf24;
+      --warning-light: #fffbe6;
+      --primary: #5a6cff;
+      --primary-hover: #3b47b7;
+      --primary-foreground: #fff;
+      --card-border: #e5e7eb;
+      --muted: #e6f0fa;
+      --muted-foreground: #7b8190;
+      --sidebar-bg: #ffffff;
+      --navbar-bg: #ffffff;
+      --card-bg: #fcfcfc;
+      --shadow: 0 4px 24px 0 rgba(90,108,255,0.07), 0 1.5px 4px 0 rgba(90,108,255,0.04);
+      --font-main: 'Inter', 'Segoe UI', Arial, sans-serif;
     }
-
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--light);
+      font-family: var(--font-main);
+      background: var(--muted);
+      color: #23263b;
     }
-
-    .sidebar {
-      position: fixed;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      z-index: 100;
-      width: 250px;
-      background: var(--light);
-      overflow-y: auto;
+    .sidebar-gradient {
+      background: var(--sidebar-bg);
+      box-shadow: var(--shadow);
     }
-
-    .sidebar .navbar .nav-link {
-      padding: 7px 20px;
-      color: var(--dark);
-      font-weight: 650;
-      border-left: 3px solid var(--light);
-      border-radius: 0 30px 30px 0;
-      font-size: 18px;
+    .navbar-gradient {
+      background: var(--navbar-bg);
+      box-shadow: var(--shadow);
     }
-
-    .sidebar .nav-link:hover,
-    .sidebar .nav-link.active {
-      color: var(--primary);
-      background: #fff;
-      border-color: var(--primary);
+    .card-gradient {
+      background: var(--card-bg);
+      box-shadow: var(--shadow);
     }
-
-    .sidebar .nav-link i {
-      width: 40px;
-      height: 40px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: #fff;
-      border-radius: 40px;
+    .shadow-smooth {
+      box-shadow: var(--shadow);
     }
-
-    .content {
-      margin-left: 250px;
-      min-height: 100vh;
-      background: #fff;
-      
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
     }
-
-    .content .navbar {
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    ::-webkit-scrollbar-track {
+      background: transparent;
     }
-
-    .content .navbar .nav-link {
-      margin-left: 25px;
-      padding: 12px 0;
-      color: var(--dark);
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--primary), var(--primary-hover));
+      border-radius: 8px;
+      border: 3px solid rgba(0,0,0,0);
+      background-clip: padding-box;
     }
-
-    .card {
-      border: 1px dashed #ccc;
-      border-radius: 10px;
+    ::-webkit-scrollbar-thumb:hover {
+      filter: brightness(0.95);
+    }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary) transparent;
+    }
+    .sidebar-gradient::-webkit-scrollbar {
+      width: 8px;
+    }
+    .sidebar-gradient::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(90,108,255,0.95), rgba(59,71,183,0.95));
+      border-radius: 6px;
+    }
+    .upload-zone {
+      border: 2px dashed #d1d5db;
       transition: all 0.3s ease;
     }
-
-    .card:hover {
+    .upload-zone:hover {
       border-color: var(--primary);
+      background-color: rgba(90, 108, 255, 0.02);
     }
-
-    .table {
-      background: #fff;
-      border-radius: 10px;
-      overflow: hidden;
+    .upload-zone.highlight {
+      border-color: var(--primary);
+      background-color: rgba(90, 108, 255, 0.05);
     }
-
-    .table thead {
-      background: var(--light);
-      color: var(--dark);
-    }
-
-    .table th, .table td {
-      vertical-align: middle;
-    }
-
-    .btn-upload {
-      background-color: #28a745;
-      color: white;
-      padding: 10px 25px;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    .file-upload-wrapper {
+    .file-badge {
       display: inline-block;
-      position: relative;
+      background: #f3f4f6;
+      padding: 6px 12px;
+      border-radius: 20px;
+      margin: 4px;
+      font-size: 13px;
+      color: #374151;
     }
-
-    .file-upload-wrapper input[type="file"] {
-      position: absolute;
-      top: 0;
-      left: 0;
-      opacity: 0;
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-    }
-
-    .highlight {
-      border-color: #007bff ;
-      background-color: #e6f2ff;
-    }
-
-    .file-names {
-      margin-top: 10px;
-      font-size: 14px;
-      color: #333;
-    }
-
-    .file-names span {
-      display: inline-block;
-      background: #f1f1f1;
-      padding: 5px 10px;
-      border-radius: 15px;
-      margin: 5px 5px 0 0;
-    }
-
-    @media (max-width: 991.98px) {
-      .sidebar {
-        width: 200px;
-      }
-      .content {
-        margin-left: 200px;
-      }
-    }
-
-    @media (max-width: 767.98px) {
-      .sidebar {
-        position: static;
-        width: 100%;
-      }
-      .content {
-        margin-left: 0;
-      }
-    }
-    .custom-file-upload {
-    display: inline-block;
-    padding: 10px 20px;
-    cursor: pointer;
-    background-color: #007bff;
-    color: white;
-    border-radius: 5px;
-    font-weight: bold;
-    text-align: center;
-  }
-
-  .custom-file-upload:hover {
-    background-color: #0056b3;
-  }
-
-  input[type="file"] {
-    display: none;
-  }
   </style>
 </head>
-
-<body>
-<div class="container-fluid position-relative bg-white d-flex p-0">
-  <!-- Sidebar -->
-  <div class="sidebar pe-4 pb-3">
-    <nav class="navbar bg-light navbar-light">
-      <a href="{{ url_for('dashboard') }}" class="navbar-brand mx-4 mb-3 d-flex align-items-center" >
-          <img
-              src="../static/img/wipro.png"
-              alt="Post Call Logo"
-              style="
-                height: 65px;
-                width: auto;
-                margin-right: 10px;
-                border-radius: 60px;
-                margin-left: -20px;
-                margin-top: -10px
-              "
-            />
-
-      <!-- <h3 class="mb-0" style="font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; color: #333;margin-top: 5px; font-size: 35px;">EchoVerge</h3> -->
-      </a>
-      <div class="navbar-nav w-100">
-        <a href="{{ url_for('dashboard') }}" class="nav-item nav-link"><i class="fa fa-list me-2"></i>Dashboard</a>
-        <a href="{{ url_for('upload_audio') }}" class="nav-item nav-link active"><i class="fa fa-upload me-2"></i>Upload</a>
-        <a href="{{ url_for('faq') }}" class="nav-item nav-link"><i class="far fa-file-alt me-2"></i>FAQs</a>
-
-        <a href="https://vqa-live-fbapf3gudhdwgyes.southindia-01.azurewebsites.net/" class="nav-item nav-link" target="_blank"><i class="fa fa-cog me-2"></i>Live board</a>
-      </div>
-    </nav>
-  </div>
-
-  <!-- Content -->
-  <div class="content w-100">
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
-      <div class="navbar-nav align-items-center ms-auto">
-        <!-- <div class="nav-item dropdown">
-          <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-            <i class="fa fa-bell me-2"></i>
-            <span class="d-none d-lg-inline-flex">Notifications</span>
-          </a>
-        </div> -->
-            <div class="nav-item dropdown">
-              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                <button id="notifyBtn" class="btn btn-outline-primary me-3">
-                <i class="fa fa-bell me-2"></i>
-                <span class="d-none d-lg-inline-flex">Notifications</span>
-                </button>
-          <script>
-              document.addEventListener('DOMContentLoaded', function() {
-                var notifyBtn = document.getElementById('notifyBtn');
-                if (notifyBtn) {
-                  notifyBtn.onclick = function() {
-                    if (confirm("Do you confirm sending a notification email?")) {
-                      fetch('/send_notification_mail', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        }
-                      })
-                      .then(response => response.json())
-                      .then(data => {
-                        if (data.message) {
-                          alert(data.message);
-                        } else {
-                          alert(data.error || "Failed to send email.");
-                        }
-                      })
-                      .catch(() => alert("Error sending email."));
-                    }
-                  }
-                }
-            });
-          </script>
-                <img class="rounded-circle me-2" src="../static/img/logoo.png" alt="Logo" style="width: 40px; height: 40px;">
-                <span class="d-none d-lg-inline-flex" id="username" style="font-weight: bolder;">ECHOVERGE</span>
-                <a href="{{ url_for('team') }}" class="d-none d-lg-inline-flex" style="font-size: 12px; color: #6c757d; text-decoration: none;margin-left: 220px;">Developed by GenAI Foundry</a></a>
-          </a>
-          <div class="dropdown-menu dropdown-menu-end">
-            <div class="dropdown-item" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
-              <div style="font-weight: 600; color: #333;">{{ user.name if user else 'Guest User' }}</div>
-              <div style="font-size: 12px; color: #6c757d;">{{ user.preferred_username if user else '' }}</div>
-            </div>
-            <a href="#" class="dropdown-item">
-              <i class="fas fa-user-circle"></i>Profile
-            </a>
-                            <a href="#" class="dropdown-item">
-                  <i class="fas fa-cog"></i>Settings
-                </a>
-            <a href="{{ url_for('logout') if user else '#' }}" class="dropdown-item" style="color: #dc3545;">
-              <i class="fas fa-sign-out-alt"></i>Logout
-            </a>
-          </div>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Upload Section -->
-    <div class="container-fluid pt-4 px-4">
-      <div class="row" style="height: 520px; min-height: 350px;">
-        <!-- Left: Upload Section -->
-        <div class="col-md-6 d-flex align-items-stretch">
-          <div class="card mb-4 w-100 d-flex flex-column justify-content-between" style="height: 95%; min-height: 320px;">
-            <div class="card-body text-center d-flex flex-column justify-content-center" style="background-color: #ffffff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; height: 95%; min-height: 300px;">
-              <h3>Upload Call Data</h3>
-              <form method="POST" action="{{ url_for('upload_audio') }}" enctype="multipart/form-data" id="uploadForm">
-                <div id="uploadBox" style="margin-top: 20px; background-color: rgb(241, 237, 237); padding: 20px; border-radius: 10px; border: 2px dashed #ccc; text-align: center; transition: 0.3s; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb;">
-                  <div style="font-size: 14px; color: #888;">
-                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                    <h5><strong>Upload Transcript File</strong></h5>
-                    <p class="text-muted">Drag and drop files here, or click to browse</p>
-                    <label for="transcript_file" class="custom-file-upload">Choose Transcript File</label>
-                    <input type="file" id="transcript_file" name="transcript_file" accept=".txt" required>
-                    <br><br>
-                    <div style="display: flex; justify-content: center; gap: 32px;">
-                      <div>
-                        <label for="audio_file_agent" class="custom-file-upload">Choose Agent Audio File</label>
-                        <input type="file" id="audio_file_agent" name="audio_file_agent" accept="audio/*" required>
-                      </div>
-                      <div>
-                        <label for="audio_file_employee" class="custom-file-upload">Choose Employee Audio File</label>
-                        <input type="file" id="audio_file_employee" name="audio_file_employee" accept="audio/*" required>
-                      </div>
-                    </div>
-                    <div class="file-names mt-2" id="fileNames"></div>
-                    <div id="audioPreview"></div>
-                  </div>
-                </div>
-                <div class="mt-3">
-                  <div style="display: flex; justify-content: center; margin-top: 20px;">
-                    <button type="submit" class="btn btn-success" style="padding: 10px 25px; font-size: 16px;">Upload</button>
-                  </div>
-                  <div id="uploadSpinner" style="display:none; margin-top:20px; text-align:center;">
-                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                      <span class="visually-hidden">Uploading...</span>
-                    </div>
-                    <div style="margin-top:8px; color:#007bff; font-weight:500;">Processing, please wait...</div>
-                  </div>
-                </div>
-              </form>
+<body class="bg-[#e6f0fa] min-h-screen text-gray-900">
+  {% include 'loading.html' %}
+  <!-- Header -->
+  <header class="bg-white border-b border-secondary-200 sticky top-0 z-50">
+    <div class="max-w-full px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-3">
+            <img src="{{ url_for('static', filename='img/logoo.png') }}" alt="Echoverge Logo" class="w-8 h-8" style="object-fit:contain;" />
+            <div>
+              <h1 class="text-xl font-bold text-text-primary">Echoverge</h1>
+              <p class="text-xs text-text-secondary">Wipro Live Workspace</p>
             </div>
           </div>
         </div>
-        <!-- Right: Sync Section -->
-        <div class="col-md-6 d-flex align-items-stretch">
-          <div class="card mb-4 w-100 d-flex flex-column justify-content-between" style="height: 95%; min-height: 320px;font-size: 15px;">
-            <div class="card-body d-flex flex-column justify-content-center align-items-center" style="padding-top:0px;margin-top: 0px;background-color: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; height: 95%; min-height: 300px;">
-              <h3>Sync & Controls</h3>
-              <div style="margin-top: 20px; background-color: rgb(241, 237, 237); padding: 20px; border-radius: 10px; border: 2px dashed #ccc; text-align: center; transition: 0.3s; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; width: 100%;">
-                
-                <!-- Sync from Cloud Button -->
-                <div style="text-align:center; margin-top:20px; width:100%;">
-                  <form id="cloudSyncForm" method="POST" action="{{ url_for('sync_cloud') }}" style="display:inline-block;">
-                    <button type="submit" class="btn btn-primary">Sync from Cloud</button>
-                  </form>
-                  <div id="cloudSyncSpinner" style="display:none; margin-top:10px; text-align:center;">
-                    <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
-                      <span class="visually-hidden">Syncing...</span>
-                    </div>
-                    <div style="margin-top:8px; color:#007bff; font-weight:500;">Syncing cloud files, please wait...</div>
-                  </div>
-                  <button id="localSyncBtn" class="btn btn-primary ms-2">Sync from Local</button>
-                  <div id="localSyncSpinner" style="display:none; margin-top:10px; text-align:center;">
-                    <div class="spinner-border text-secondary" role="status" style="width: 2.5rem; height: 2.5rem;">
-                      <span class="visually-hidden">Syncing...</span>
-                    </div>
-                    <div style="margin-top:8px; color:#6c757d; font-weight:500;">Syncing local files, please wait...</div>
-                  </div>
-                </div>
-                <!-- Sync Interval Control -->
-                <div style="text-align:center; margin-top:20px; width:100%;">
-                  <label for="syncIntervalSelect" style="font-weight:500; margin-right:8px;">Local Sync Interval:</label>
-                  <select id="syncIntervalSelect" class="form-select d-inline-block" style="width:120px; display:inline-block;">
-                    <option value="1">1 min</option>
-                    <option value="5">5 min</option>
-                    <option value="10">10 min</option>
-                    <option value="30">30 min</option>
-                    <option value="60">60 min</option>
-                  </select>
-                  <button id="setSyncIntervalBtn" type="button" class="btn btn-success">Set Sync Interval</button>
-                  <span id="syncIntervalStatus" style="margin-left:12px; color:#198754; font-weight:500; "></span>
-                </div>
+
+        <!-- User Dropdown -->
+        <div class="flex items-center space-x-4">
+          <div class="relative" id="userDropdownWrapper">
+            <button id="userDropdownBtn" class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 focus:outline-none" aria-expanded="false" aria-haspopup="true">
+              <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+              <span class="text-sm font-medium">{{ user.name if user else 'Guest User' }}</span>
+              <svg class="w-3 h-3 text-gray-500" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+            </button>
+            <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-card-border z-50">
+              <div class="px-4 py-3 border-b border-card-border">
+                <div class="text-sm font-semibold">{{ user.name if user else 'Guest User' }}</div>
+                <div class="text-xs text-muted-foreground">{{ user.preferred_username if user and user.preferred_username else '-' }}</div>
+              </div>
+              <div class="py-2">
+                <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Profile</a>
+                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Log out</a>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </header>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.getElementById('userDropdownBtn');
+      const menu = document.getElementById('userDropdownMenu');
+      const wrapper = document.getElementById('userDropdownWrapper');
+      if (!btn || !menu) return;
+      btn.addEventListener('click', function(e) { e.preventDefault(); menu.classList.toggle('hidden'); });
+      document.addEventListener('click', function(e) { if (!wrapper.contains(e.target)) menu.classList.add('hidden'); });
+    });
+  </script>
+
+  <div class="flex pt-0">
+    <!-- Sidebar -->
+    <aside class="w-64 sidebar-gradient border-r border-card-border h-[calc(100vh-4rem)]">
+      <div class="p-6 fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] sidebar-gradient border-r border-card-border z-30 flex flex-col">
+        <nav class="space-y-2">
+          <a href="{{ url_for('dashboard') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.endpoint == 'dashboard' %}bg-primary text-primary-foreground shadow transition-all{% else %}text-gray-900 hover:bg-gray-100{% endif %}">
+            <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
+            <span class="font-medium">Dashboard</span>
+          </a>
+          <a href="{{ url_for('faq') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.endpoint == 'faq' %}bg-primary text-primary-foreground shadow transition-all{% else %}text-gray-900 hover:bg-gray-100{% endif %}">
+            <i data-lucide="help-circle" class="h-5 w-5"></i>
+            <span class="font-medium">FAQ</span>
+          </a>
+          <a href="https://vqa-live-fbapf3gudhdwgyes.southindia-01.azurewebsites.net/" target="_blank" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+            <i data-lucide="radio" class="h-5 w-5"></i>
+            <span class="font-medium">Live Board</span>
+          </a>
+          <a href="{{ url_for('upload_audio') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.endpoint == 'upload_audio' %}bg-primary text-primary-foreground shadow transition-all{% else %}text-gray-900 hover:bg-gray-100{% endif %}">
+            <i data-lucide="settings" class="h-5 w-5"></i>
+            <span class="font-medium">Settings</span>
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <main class="flex-1 p-6 space-y-6">
+      <!-- Page Header -->
+      <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth">
+        <h2 class="text-2xl font-semibold mb-2">Settings & Upload</h2>
+        <p class="text-sm text-muted-foreground">Upload call recordings and manage sync settings</p>
+      </div>
+
+      <!-- Upload and Sync Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Upload Section -->
+        <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth">
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i data-lucide="upload" class="h-5 w-5 text-primary"></i>
+            Upload Call Data
+          </h3>
+          
+          <form method="POST" action="{{ url_for('upload_audio') }}" enctype="multipart/form-data" id="uploadForm">
+            <div id="uploadBox" class="upload-zone rounded-xl p-8 text-center">
+              <div class="flex flex-col items-center gap-4">
+                <div class="p-4 bg-primary/10 rounded-full">
+                  <i data-lucide="cloud-upload" class="h-12 w-12 text-primary"></i>
+                </div>
+                <div>
+                  <h5 class="font-semibold text-lg mb-1">Drag and drop files here</h5>
+                  <p class="text-sm text-muted-foreground mb-4">or click to browse</p>
+                </div>
+
+                <div class="space-y-3 w-full max-w-md">
+                  <label for="transcript_file" class="block w-full px-4 py-3 bg-primary text-white rounded-lg font-medium cursor-pointer hover:bg-primary-hover transition-colors">
+                    <i data-lucide="file-text" class="inline h-4 w-4 mr-2"></i>
+                    Choose Transcript File
+                  </label>
+                  <input type="file" id="transcript_file" name="transcript_file" accept="**.txt" required class="hidden">
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label for="audio_file_agent" class="block w-full px-4 py-3 bg-gray-700 text-white rounded-lg font-medium cursor-pointer hover:bg-gray-800 transition-colors text-sm">
+                        <i data-lucide="mic" class="inline h-4 w-4 mr-1"></i>
+                        Agent Audio
+                      </label>
+                      <input type="file" id="audio_file_agent" name="audio_file_agent" accept="audio/*" required class="hidden">
+                    </div>
+                    <div>
+                      <label for="audio_file_employee" class="block w-full px-4 py-3 bg-gray-700 text-white rounded-lg font-medium cursor-pointer hover:bg-gray-800 transition-colors text-sm">
+                        <i data-lucide="user" class="inline h-4 w-4 mr-1"></i>
+                        Employee Audio
+                      </label>
+                      <input type="file" id="audio_file_employee" name="audio_file_employee" accept="audio/*" required class="hidden">
+                    </div>
+                  </div>
+                </div>
+
+                <div id="fileNames" class="text-sm"></div>
+                <div id="audioPreview"></div>
+              </div>
+            </div>
+
+            <div class="mt-4 flex flex-col items-center gap-3">
+              <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center gap-2">
+                <i data-lucide="upload-cloud" class="h-5 w-5"></i>
+                Upload Files
+              </button>
+              <div id="uploadSpinner" style="display:none;" class="text-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div class="mt-2 text-sm text-primary font-medium">Processing, please wait...</div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Sync & Controls Section -->
+        <div class="card-gradient border border-card-border rounded-xl p-6 shadow-smooth">
+          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="h-5 w-5 text-primary"></i>
+            Sync & Controls
+          </h3>
+
+          <div class="space-y-6">
+            <!-- Cloud Sync -->
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 class="font-medium mb-3 text-sm">Cloud Sync</h4>
+              <form id="cloudSyncForm" method="POST" action="{{ url_for('sync_cloud') }}">
+                <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                  <i data-lucide="cloud" class="h-4 w-4"></i>
+                  Sync from Cloud
+                </button>
+              </form>
+              <div id="cloudSyncSpinner" style="display:none;" class="mt-3 text-center">
+                <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <div class="mt-1 text-xs text-blue-600 font-medium">Syncing cloud files...</div>
+              </div>
+            </div>
+
+            <!-- Local Sync -->
+            <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <h4 class="font-medium mb-3 text-sm">Local Sync</h4>
+              <button id="localSyncBtn" class="w-full px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="hard-drive" class="h-4 w-4"></i>
+                Sync from Local
+              </button>
+              <div id="localSyncSpinner" style="display:none;" class="mt-3 text-center">
+                <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-700"></div>
+                <div class="mt-1 text-xs text-gray-700 font-medium">Syncing local files...</div>
+              </div>
+            </div>
+
+            <!-- Sync Interval -->
+            <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h4 class="font-medium mb-3 text-sm">Sync Interval</h4>
+              <div class="flex gap-2">
+                <select id="syncIntervalSelect" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option value="1">1 min</option>
+                  <option value="5">5 min</option>
+                  <option value="10">10 min</option>
+                  <option value="30">30 min</option>
+                  <option value="60">60 min</option>
+                </select>
+                <button id="setSyncIntervalBtn" type="button" class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-sm">
+                  Set
+                </button>
+              </div>
+              <span id="syncIntervalStatus" class="block mt-2 text-xs text-green-600 font-medium"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
-</div>
 
-<!-- Bootstrap JS Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // File upload drag and drop
+    const uploadBox = document.getElementById('uploadBox');
+    const transcriptInput = document.getElementById('transcript_file');
+    const audioInputAgent = document.getElementById('audio_file_agent');
+    const audioInputEmployee = document.getElementById('audio_file_employee');
+    const fileNames = document.getElementById('fileNames');
+    const audioPreview = document.getElementById('audioPreview');
 
-<script>
-  const uploadBox = document.getElementById('uploadBox');
-  const transcriptInput = document.getElementById('transcript_file');
-  const audioInputAgent = document.getElementById('audio_file_agent');
-  const audioInputEmployee = document.getElementById('audio_file_employee');
-  const fileNames = document.getElementById('fileNames');
-  const audioPreview = document.getElementById('audioPreview');
-
-  // Drag and drop highlight
-  uploadBox.addEventListener('dragover', function (e) {
-    e.preventDefault();
-    uploadBox.classList.add('highlight');
-  });
-
-  uploadBox.addEventListener('dragleave', function (e) {
-    uploadBox.classList.remove('highlight');
-  });
-
-  uploadBox.addEventListener('drop', function (e) {
-    e.preventDefault();
-    uploadBox.classList.remove('highlight');
-    const dt = e.dataTransfer;
-    // Assign files to correct inputs by type
-    for (let i = 0; i < dt.files.length; i++) {
-      if (dt.files[i].type.startsWith('audio/')) {
-        const audioDT = new DataTransfer();
-        audioDT.items.add(dt.files[i]);
-        if (audioInputAgent.files.length === 0) {
-          audioInputAgent.files = audioDT.files;
-        } else {
-          audioInputEmployee.files = audioDT.files;
-        }
-      } else if (dt.files[i].name.endsWith('.txt')) {
-        const txtDT = new DataTransfer();
-        txtDT.items.add(dt.files[i]);
-        transcriptInput.files = txtDT.files;
-      }
-    }
-    showFileNames();
-  });
-
-  transcriptInput.addEventListener('change', showFileNames);
-  audioInputAgent.addEventListener('change', showFileNames);
-  audioInputEmployee.addEventListener('change', showFileNames);
-
-  function showFileNames() {
-    let html = '';
-    // Transcript file name
-    if (transcriptInput.files.length > 0) {
-      html += `<span>${transcriptInput.files[0].name}</span>`;
-    }
-    // Agent audio file name and preview
-    if (audioInputAgent.files.length > 0) {
-      html += `<span>${audioInputAgent.files[0].name}</span>`;
-    }
-    // Employee audio file name and preview
-    if (audioInputEmployee.files.length > 0) {
-      html += `<span>${audioInputEmployee.files[0].name}</span>`;
-      audioPreview.innerHTML = `<audio controls style="margin-top:8px;max-width:300px;">
-        <source src="${URL.createObjectURL(audioInputEmployee.files[0])}">
-        Your browser does not support the audio element.
-      </audio>`;
-    } else {
-      audioPreview.innerHTML = '';
-    }
-    fileNames.innerHTML = html;
-  }
-
-  // // User dropdown functionality
-  // function toggleUserDropdown() {
-  //   const dropdown = document.getElementById('userDropdownMenu');
-  //   dropdown.classList.toggle('show');
-  // }
-
-  // // Close dropdown when clicking outside
-  // document.addEventListener('click', function(event) {
-  //   const userDropdown = document.querySelector('.user-dropdown');
-  //   const dropdown = document.getElementById('userDropdownMenu');
-  //   if (userDropdown && dropdown && !userDropdown.contains(event.target)) {
-  //     dropdown.classList.remove('show');
-  //   }
-  // });
-
-  // Show spinner on upload
-  document.getElementById('uploadForm').addEventListener('submit', function() {
-    document.getElementById('uploadSpinner').style.display = '';
-  });
-
-  // Local Sync Button Handler
-  const localSyncBtn = document.getElementById('localSyncBtn');
-  const localSyncSpinner = document.getElementById('localSyncSpinner');
-  if (localSyncBtn) {
-    localSyncBtn.addEventListener('click', function() {
-      localSyncBtn.disabled = true;
-      localSyncSpinner.style.display = '';
-      fetch('{{ url_for('sync_local') }}', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-      })
-      .then(response => {
-        localSyncBtn.disabled = false;
-        localSyncSpinner.style.display = 'none';
-        if (response.ok) {
-          location.reload();
-        } else {
-          response.text().then(text => alert('Local sync failed: ' + text));
-        }
-      })
-      .catch(err => {
-        localSyncBtn.disabled = false;
-        localSyncSpinner.style.display = 'none';
-        alert('Local sync error: ' + err);
-      });
-    });
-  }
-
-  // Cloud Sync Form Handler
-  const cloudSyncForm = document.getElementById('cloudSyncForm');
-  const cloudSyncSpinner = document.getElementById('cloudSyncSpinner');
-  if (cloudSyncForm) {
-    cloudSyncForm.addEventListener('submit', function(e) {
+    uploadBox.addEventListener('dragover', function (e) {
       e.preventDefault();
-      cloudSyncSpinner.style.display = '';
-      const formData = new FormData(cloudSyncForm);
-      fetch(cloudSyncForm.action, {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-      })
-      .then(response => {
-        cloudSyncSpinner.style.display = 'none';
-        if (response.ok) {
-          location.reload();
-        } else {
-          response.text().then(text => alert('Cloud sync failed: ' + text));
-        }
-      })
-      .catch(err => {
-        cloudSyncSpinner.style.display = 'none';
-        alert('Cloud sync error: ' + err);
-      });
+      uploadBox.classList.add('highlight');
     });
-  }
 
-  // --- Sync Interval Control ---
-  const setSyncIntervalBtn = document.getElementById('setSyncIntervalBtn');
-  const syncIntervalSelect = document.getElementById('syncIntervalSelect');
-  const syncIntervalStatus = document.getElementById('syncIntervalStatus');
-  // Fetch and display current interval on page load
-  fetch('/get_sync_status', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
-    .then(r => r.json())
-    .then(data => {
-      if (data && data.interval) {
-        syncIntervalSelect.value = data.interval;
-        syncIntervalStatus.textContent = `Current: ${data.interval} min${data.interval > 1 ? 's' : ''}`;
-      }
-      if (data && data.running === false) {
-        syncIntervalStatus.textContent += ' (Not running)';
-      }
+    uploadBox.addEventListener('dragleave', function (e) {
+      uploadBox.classList.remove('highlight');
     });
-  if (setSyncIntervalBtn && syncIntervalSelect) {
-    setSyncIntervalBtn.addEventListener('click', function() {
-      setSyncIntervalBtn.disabled = true;
-      const minutes = parseInt(syncIntervalSelect.value);
-      fetch('/set_sync_interval', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({ minutes })
-      })
-      .then(response => response.json())
+
+    uploadBox.addEventListener('drop', function (e) {
+      e.preventDefault();
+      uploadBox.classList.remove('highlight');
+      const dt = e.dataTransfer;
+      for (let i = 0; i < dt.files.length; i++) {
+        if (dt.files[i].type.startsWith('audio/')) {
+          const audioDT = new DataTransfer();
+          audioDT.items.add(dt.files[i]);
+          if (audioInputAgent.files.length === 0) {
+            audioInputAgent.files = audioDT.files;
+          } else {
+            audioInputEmployee.files = audioDT.files;
+          }
+        } else if (dt.files[i].name.endsWith('.txt')) {
+          const txtDT = new DataTransfer();
+          txtDT.items.add(dt.files[i]);
+          transcriptInput.files = txtDT.files;
+        }
+      }
+      showFileNames();
+    });
+
+    transcriptInput.addEventListener('change', showFileNames);
+    audioInputAgent.addEventListener('change', showFileNames);
+    audioInputEmployee.addEventListener('change', showFileNames);
+
+    function showFileNames() {
+      let html = '';
+      if (transcriptInput.files.length > 0) {
+        html += `<span class="file-badge">${transcriptInput.files[0].name}</span>`;
+      }
+      if (audioInputAgent.files.length > 0) {
+        html += `<span class="file-badge">${audioInputAgent.files[0].name}</span>`;
+      }
+      if (audioInputEmployee.files.length > 0) {
+        html += `<span class="file-badge">${audioInputEmployee.files[0].name}</span>`;
+        audioPreview.innerHTML = `<audio controls class="mt-3 max-w-full">
+          <source src="${URL.createObjectURL(audioInputEmployee.files[0])}">
+        </audio>`;
+      } else {
+        audioPreview.innerHTML = '';
+      }
+      fileNames.innerHTML = html;
+    }
+
+    // Upload form spinner
+    document.getElementById('uploadForm').addEventListener('submit', function() {
+      document.getElementById('uploadSpinner').style.display = '';
+    });
+
+    // Local Sync
+    const localSyncBtn = document.getElementById('localSyncBtn');
+    const localSyncSpinner = document.getElementById('localSyncSpinner');
+    if (localSyncBtn) {
+      localSyncBtn.addEventListener('click', function() {
+        localSyncBtn.disabled = true;
+        localSyncSpinner.style.display = '';
+        fetch('{{ url_for('sync_local') }}', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => {
+          localSyncBtn.disabled = false;
+          localSyncSpinner.style.display = 'none';
+          if (response.ok) {
+            location.reload();
+          } else {
+            response.text().then(text => alert('Local sync failed: ' + text));
+          }
+        })
+        .catch(err => {
+          localSyncBtn.disabled = false;
+          localSyncSpinner.style.display = 'none';
+          alert('Local sync error: ' + err);
+        });
+      });
+    }
+
+    // Cloud Sync
+    const cloudSyncForm = document.getElementById('cloudSyncForm');
+    const cloudSyncSpinner = document.getElementById('cloudSyncSpinner');
+    if (cloudSyncForm) {
+      cloudSyncForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        cloudSyncSpinner.style.display = '';
+        const formData = new FormData(cloudSyncForm);
+        fetch(cloudSyncForm.action, {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => {
+          cloudSyncSpinner.style.display = 'none';
+          if (response.ok) {
+            location.reload();
+          } else {
+            response.text().then(text => alert('Cloud sync failed: ' + text));
+          }
+        })
+        .catch(err => {
+          cloudSyncSpinner.style.display = 'none';
+          alert('Cloud sync error: ' + err);
+        });
+      });
+    }
+
+    // Sync Interval
+    const setSyncIntervalBtn = document.getElementById('setSyncIntervalBtn');
+    const syncIntervalSelect = document.getElementById('syncIntervalSelect');
+    const syncIntervalStatus = document.getElementById('syncIntervalStatus');
+    
+    fetch('/get_sync_status', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+      .then(r => r.json())
       .then(data => {
-        setSyncIntervalBtn.disabled = false;
-        if (data.status === 'success') {
-          syncIntervalStatus.textContent = `Interval set to ${data.interval} min${data.interval > 1 ? 's' : ''}`;
-          setTimeout(() => { syncIntervalStatus.textContent = ''; }, 3000);
-        } else {
-          syncIntervalStatus.textContent = 'Failed to set interval';
+        if (data && data.interval) {
+          syncIntervalSelect.value = data.interval;
+          syncIntervalStatus.textContent = `Current: ${data.interval} min${data.interval > 1 ? 's' : ''}`;
         }
-      })
-      .catch(err => {
-        setSyncIntervalBtn.disabled = false;
-        syncIntervalStatus.textContent = 'Error setting interval';
+        if (data && data.running === false) {
+          syncIntervalStatus.textContent += ' (Not running)';
+        }
       });
-    });
-  }
-</script>
 
+    if (setSyncIntervalBtn && syncIntervalSelect) {
+      setSyncIntervalBtn.addEventListener('click', function() {
+        setSyncIntervalBtn.disabled = true;
+        const minutes = parseInt(syncIntervalSelect.value);
+        fetch('/set_sync_interval', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ minutes })
+        })
+        .then(response => response.json())
+        .then(data => {
+          setSyncIntervalBtn.disabled = false;
+          if (data.status === 'success') {
+            syncIntervalStatus.textContent = `Interval set to ${data.interval} min${data.interval > 1 ? 's' : ''}`;
+            setTimeout(() => { syncIntervalStatus.textContent = ''; }, 3000);
+          } else {
+            syncIntervalStatus.textContent = 'Failed to set interval';
+          }
+        })
+        .catch(err => {
+          setSyncIntervalBtn.disabled = false;
+          syncIntervalStatus.textContent = 'Error setting interval';
+        });
+      });
+    }
+
+    // Activate Lucide icons
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  </script>
 </body>
 </html>

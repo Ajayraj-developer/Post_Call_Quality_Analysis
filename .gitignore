@@ -25,6 +25,7 @@ var/
 
 # Virtual environments
 venv/
+venv_v2/
 ENV/
 env/
 
@@ -38,7 +39,7 @@ env/
 .vscode/
 
 # Token/session cache
- token_cache/
+token_cache/
 
 # OS files
 .DS_Store

@@ -36,7 +36,7 @@ AUTHORITY = "https://login.microsoftonline.com/f5791d91-daca-4d28-8700-680f7a2f8
 REDIRECT_PATH = "/getAToken"
 SCOPE = ["User.ReadBasic.All"]
 
-REDIRECT_URI = "http://wipgenai.lwpcoe.com/vqa_post/getAToken"
+REDIRECT_URI = "http://localhost:5000/getAToken"
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -86,7 +86,7 @@ CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 AUTHORITY = "https://login.microsoftonline.com/f5791d91-daca-4d28-8700-680f7a2f8b6a"
 REDIRECT_PATH = "/getAToken"
 SCOPE = ["User.ReadBasic.All"]
-REDIRECT_URI = "http://wipgenai.lwpcoe.com/vqa_post/getAToken"
+REDIRECT_URI = "http://localhost:5000/getAToken"
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
