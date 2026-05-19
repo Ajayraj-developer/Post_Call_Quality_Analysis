@@ -7,6 +7,7 @@ import os
 from analytics import PROMPTS, generate_section
 from emotion_inference import calculate_average_speech_rate, get_calm_score, get_vad_over_time
 from context_based import get_agent_employee_sentiment, parse_transcript_lines, get_sentiment_flow
+from data import CallDataRepository, get_db_url
 
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -435,34 +436,24 @@ def upload_audio():
             "voice_elevation_freq": voice_elevation_freq,
             "sop_steps_followed": sop_steps_followed
         }
-        from data import CallDataRepository
-        # Load DB credentials from environment variables
-        db_user = os.environ.get('DB_USER')
-        db_password = os.environ.get('DB_PASSWORD')
-        db_host = os.environ.get('DB_HOST', 'localhost')
-        db_name = os.environ.get('DB_NAME')
-        db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+        # Load DB credentials and initialize repository
+        db_url = get_db_url()
         repo = CallDataRepository(db_url)
         try:
             repo.insert_call(doc)
             # Use the 6-digit business call_id for redirect, not the SQL row id
             return redirect(url_for('view_call', call_id=doc["call_id"]))
         except Exception as e:
-            if 'Duplicate entry' in str(e):
+            error_str = str(e).lower()
+            if 'duplicate entry' in error_str or 'violation of unique key constraint' in error_str:
                 print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
                 return "Duplicate call_id not inserted.", 409
             else:
                 print(f"[ERROR] Exception inserting doc: {e}")
                 return f"Error inserting document into database: {str(e)}", 500
 
-    # Fetch call list for display from MySQL
-    from data import CallDataRepository
-    db_user = os.environ.get('DB_USER')
-    db_password = os.environ.get('DB_PASSWORD')
-    db_host = os.environ.get('DB_HOST', 'localhost')
-    db_name = os.environ.get('DB_NAME')
-    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
-    repo = CallDataRepository(db_url)
+    # Fetch call list for display
+    repo = CallDataRepository(get_db_url())
     call_records = repo.get_all_calls(limit=20, offset=0)
     call_list = []
     for call in call_records:
@@ -533,14 +524,8 @@ import msal
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Fetch call list from MySQL using CallDataRepository
-    from data import CallDataRepository
-    db_user = os.environ.get('DB_USER')
-    db_password = os.environ.get('DB_PASSWORD')
-    db_host = os.environ.get('DB_HOST', 'localhost')
-    db_name = os.environ.get('DB_NAME')
-    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
-    repo = CallDataRepository(db_url)
+    # Fetch call list using CallDataRepository
+    repo = CallDataRepository(get_db_url())
     # Filtering logic
     from datetime import datetime, timedelta
     filter_type = request.args.get('filter', 'total')
@@ -736,13 +721,7 @@ def sync_cloud():
     results = sync_all_calls_from_azure(storage_account_name, container_name, sas_token, download_dir)
     processed = 0
     errors = []
-    from data import CallDataRepository
-    db_user = os.environ.get('DB_USER')
-    db_password = os.environ.get('DB_PASSWORD')
-    db_host = os.environ.get('DB_HOST', 'localhost')
-    db_name = os.environ.get('DB_NAME')
-    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
-    repo = CallDataRepository(db_url)
+    repo = CallDataRepository(get_db_url())
     for call in results:
         try:
             transcript_path = call['transcript']
@@ -858,7 +837,8 @@ def sync_cloud():
                 repo.insert_call(doc)
                 processed += 1
             except Exception as e:
-                if 'Duplicate entry' in str(e):
+                error_str = str(e).lower()
+                if 'duplicate entry' in error_str or 'violation of unique key constraint' in error_str:
                     print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
                 else:
                     print(f"[ERROR] Exception inserting doc: {e}")
@@ -883,13 +863,8 @@ def sync_cloud():
 @app.route('/call/<call_id>')
 @login_required
 def view_call(call_id):
-    from data import CallDataRepository
-    db_user = os.environ.get('DB_USER')
-    db_password = os.environ.get('DB_PASSWORD')
-    db_host = os.environ.get('DB_HOST', 'localhost')
-    db_name = os.environ.get('DB_NAME')
-    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
-    repo = CallDataRepository(db_url)
+    # Fetch call list using CallDataRepository
+    repo = CallDataRepository(get_db_url())
     call = repo.get_call_by_call_id(call_id)
     if not call:
         return "Call not found", 404
@@ -942,13 +917,7 @@ def sync_local():
     print(f"[DEBUG] Found transcript files: {txt_files}")
     processed = 0
     errors = []
-    from data import CallDataRepository
-    db_user = os.environ.get('DB_USER')
-    db_password = os.environ.get('DB_PASSWORD')
-    db_host = os.environ.get('DB_HOST', 'localhost')
-    db_name = os.environ.get('DB_NAME')
-    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
-    repo = CallDataRepository(db_url)
+    repo = CallDataRepository(get_db_url())
     for txt_path in txt_files:
         try:
             base = os.path.splitext(os.path.basename(txt_path))[0]
@@ -1086,7 +1055,8 @@ def sync_local():
                 repo.insert_call(doc)
                 processed += 1
             except Exception as e:
-                if 'Duplicate entry' in str(e):
+                error_str = str(e).lower()
+                if 'duplicate entry' in error_str or 'violation of unique key constraint' in error_str:
                     print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
                 else:
                     print(f"[ERROR] Exception inserting doc: {e}")
@@ -1108,14 +1078,8 @@ def sync_local():
 current_sync_interval = {'minutes': 5}
 
 def perform_local_sync():
-    """Background job to sync local files to MySQL using CallDataRepository."""
-    from data import CallDataRepository
-    db_user = os.environ.get('DB_USER')
-    db_password = os.environ.get('DB_PASSWORD')
-    db_host = os.environ.get('DB_HOST', 'localhost')
-    db_name = os.environ.get('DB_NAME')
-    db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
-    repo = CallDataRepository(db_url)
+    """Background job to sync local files using CallDataRepository."""
+    repo = CallDataRepository(get_db_url())
     local_dir = os.path.join(os.path.dirname(__file__), 'local_sync')
     processed, errors = repo.sync_local_folder(local_dir, user_name=None, user_email=None, verbose=True)
     if errors:

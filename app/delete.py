@@ -6,7 +6,7 @@ import os
 import sys
 from datetime import datetime
 from dotenv import load_dotenv
-from data import CallDataRepository
+from data import CallDataRepository, get_db_url
 
 # Load environment variables
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
@@ -24,11 +24,7 @@ class CallDeleter:
             db_url: Database URL (optional, defaults to environment variables)
         """
         if db_url is None:
-            db_user = os.environ.get('DB_USER')
-            db_password = os.environ.get('DB_PASSWORD')
-            db_host = os.environ.get('DB_HOST', 'localhost')
-            db_name = os.environ.get('DB_NAME')
-            db_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+            db_url = get_db_url()
         
         self.repo = CallDataRepository(db_url)
         self.session = self.repo.Session()

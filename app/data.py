@@ -2,8 +2,36 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Text, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime
+import os
+from urllib.parse import quote_plus
 
 Base = declarative_base()
+
+def get_db_url():
+    """
+    Construct database URL from environment variables.
+    Supports both MySQL and MSSQL based on the DB_TYPE env variable.
+    """
+    db_type = os.environ.get('DB_TYPE', 'mssql').lower() # Default to mssql
+    db_user = os.environ.get('DB_USER')
+    db_password = os.environ.get('DB_PASSWORD')
+    # Support both DB_HOST and DB_SERVER
+    db_host = os.environ.get('DB_HOST') or os.environ.get('DB_SERVER', 'localhost')
+    db_name = os.environ.get('DB_NAME')
+    
+    # Clean up Azure-style host strings (e.g., tcp:server.net,1433 -> server.net:1433)
+    if db_host and 'tcp:' in db_host:
+        db_host = db_host.replace('tcp:', '')
+    if db_host and ',' in db_host:
+        db_host = db_host.replace(',', ':')
+    
+    if db_type == 'mysql':
+        return f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}"
+    else:
+        # MSSQL connection string using pyodbc
+        driver = os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
+        safe_password = quote_plus(db_password) if db_password else ""
+        return f"mssql+pyodbc://{db_user}:{safe_password}@{db_host}/{db_name}?driver={driver.replace(' ', '+')}"
 
 class CallData(Base):
     __tablename__ = 'call_data'
@@ -40,9 +68,15 @@ class CallData(Base):
     sop_steps_followed = Column(Integer)
 
 class CallDataRepository:
+    def __init__(self, db_url):
+        self.engine = create_engine(db_url)
+        # Ensure all tables exist
+        Base.metadata.create_all(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
+
     def sync_local_folder(self, local_dir, user_name=None, user_email=None, verbose=True):
         """
-        Scan the local_dir for transcript and audio files, deduplicate by call_id, parse, and insert new calls into MySQL.
+        Scan the local_dir for transcript and audio files, deduplicate by call_id, parse, and insert new calls.
         Returns (processed_count, errors_list)
         """
         import glob
@@ -184,7 +218,9 @@ class CallDataRepository:
                     self.insert_call(doc)
                     processed += 1
                 except Exception as e:
-                    if 'Duplicate entry' in str(e):
+                    # Generic check for unique constraint violations across MySQL and MSSQL
+                    error_str = str(e).lower()
+                    if 'duplicate entry' in error_str or 'violation of unique key constraint' in error_str:
                         if verbose:
                             print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
                     else:
@@ -213,10 +249,6 @@ class CallDataRepository:
             return None
         finally:
             session.close()
-    def __init__(self, db_url):
-        self.engine = create_engine(db_url)
-        Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
 
     def insert_call(self, call_dict):
         session = self.Session()
