@@ -201,7 +201,7 @@
                 </div>
 
                 <div class="space-y-3 w-full max-w-md">
-                  <label for="transcript_file" class="block w-full px-4 py-3 bg-primary text-white rounded-lg font-medium cursor-pointer hover:bg-primary-hover transition-colors">
+                  <label for="transcript_file" class="block w-full px-4 py-3 bg-gray-700 text-white rounded-lg font-medium cursor-pointer hover:bg-gray-800 transition-colors text-sm">
                     <i data-lucide="file-text" class="inline h-4 w-4 mr-2"></i>
                     Choose Transcript File
                   </label>
@@ -399,33 +399,38 @@
     }
 
     // Cloud Sync
-    const cloudSyncForm = document.getElementById('cloudSyncForm');
-    const cloudSyncSpinner = document.getElementById('cloudSyncSpinner');
-    if (cloudSyncForm) {
-      cloudSyncForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        cloudSyncSpinner.style.display = '';
-        const formData = new FormData(cloudSyncForm);
-        fetch(cloudSyncForm.action, {
-          method: 'POST',
-          body: formData,
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => {
-          cloudSyncSpinner.style.display = 'none';
-          if (response.ok) {
-            location.reload();
+const cloudSyncForm = document.getElementById('cloudSyncForm');
+const cloudSyncSpinner = document.getElementById('cloudSyncSpinner');
+if (cloudSyncForm) {
+  cloudSyncForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    cloudSyncSpinner.style.display = '';
+    const formData = new FormData(cloudSyncForm);
+    fetch(cloudSyncForm.action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+      cloudSyncSpinner.style.display = 'none';
+      if (response.ok) {
+        response.json().then(data => {
+          if (data.last_call_id) {
+            window.location.href = `/call/${data.last_call_id}`;
           } else {
-            response.text().then(text => alert('Cloud sync failed: ' + text));
+            location.reload();
           }
-        })
-        .catch(err => {
-          cloudSyncSpinner.style.display = 'none';
-          alert('Cloud sync error: ' + err);
         });
-      });
-    }
-
+      } else {
+        response.text().then(text => alert('Cloud sync failed: ' + text));
+      }
+    })
+    .catch(err => {
+      cloudSyncSpinner.style.display = 'none';
+      alert('Cloud sync error: ' + err);
+    });
+  });
+}
     // Sync Interval
     const setSyncIntervalBtn = document.getElementById('setSyncIntervalBtn');
     const syncIntervalSelect = document.getElementById('syncIntervalSelect');

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, Text, DateTime, JSON
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text, DateTime, JSON, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime
@@ -236,6 +236,256 @@ class CallDataRepository:
         if verbose:
             print(f"[SYNC_LOCAL] Local sync complete. {processed} new calls imported.")
         return processed, errors
+
+    def sync_cloud_from_db(self, table_name='call_data11', download_dir=None, user_name=None, user_email=None, verbose=True):
+        """
+        Read rows from an external table (default `call_data11`) that contains
+        URLs to transcript and audio files in Azure Blob Storage, download the
+        files locally, process them using the same pipeline as local sync,
+        and insert new calls into `call_data`.
+
+        Returns (processed_count, errors_list)
+        """
+        import requests
+        from urllib.parse import urlparse
+        import os
+        import re
+        from datetime import datetime
+        from emotion_inference import calculate_average_speech_rate, get_calm_score, get_vad_over_time
+        from context_based import get_agent_employee_sentiment, parse_transcript_lines, get_sentiment_flow
+        from analytics import PROMPTS, generate_section
+        from pydub import AudioSegment
+
+        processed = 0
+        errors = []
+        last_call_id = None
+        session = self.Session()
+        try:
+            # Query the external table for rows to process
+            sql = f"SELECT * FROM {table_name}"
+            result = session.execute(text(sql))
+            rows = result.fetchall()
+            if verbose:
+                print(f"[SYNC_CLOUD_DB] Found {len(rows)} rows in {table_name}")
+
+            for row in rows:
+                try:
+                    # normalize access by column names if present
+                    rowdict = dict(row._mapping) if hasattr(row, '_mapping') else dict(row)
+                    call_id_val = str(rowdict.get('call id') or rowdict.get('call_id') or rowdict.get('callid') or rowdict.get('id'))
+                    transcript_url = rowdict.get('transcript_file') or rowdict.get('transcript')
+                    agent_audio_url = rowdict.get('agent_audio_file') or rowdict.get('agent_audio') or rowdict.get('agent_audio_file_url')
+                    emp_audio_url = rowdict.get('emp_audio_file') or rowdict.get('employee_audio') or rowdict.get('emp_audio_file_url')
+
+                    if not call_id_val:
+                        if verbose:
+                            print('[SYNC_CLOUD_DB] skipping row without call_id')
+                        continue
+
+                    # Skip if already processed
+                    if self.get_call_by_call_id(call_id_val):
+                        if verbose:
+                            print(f"[SYNC_CLOUD_DB] Skipping existing call_id: {call_id_val}")
+                        continue
+
+                    if not transcript_url or not agent_audio_url:
+                        if verbose:
+                            print(f"[SYNC_CLOUD_DB] Missing transcript or agent audio for call {call_id_val}")
+                        continue
+
+                    # prepare download folder
+                    if not download_dir:
+                        download_dir = os.path.join(os.path.dirname(__file__), 'Cloud_sync', 'downloaded_transcripts')
+                    os.makedirs(download_dir, exist_ok=True)
+
+                    def download(url, target_name):
+                        # Attempt to download a file. If the URL is private and a global
+                        # SAS token is provided in env, append it when the URL has no query.
+                        from urllib.parse import urlparse, urlunparse
+                        parsed = urlparse(url)
+                        fname = os.path.basename(parsed.path)
+                        local_path = os.path.join(download_dir, f"{call_id_val}_{target_name}_{fname}")
+                        # If URL has no query and a SAS token is available in env, append it
+                        try:
+                            query = parsed.query
+                            if not query:
+                                sas_token = os.environ.get('AZURE_STORAGE_SAS_TOKEN') or os.environ.get('VITE_AZURE_STORAGE_SAS_TOKEN')
+                                if sas_token:
+                                    token = sas_token.lstrip('?')
+                                    parsed = parsed._replace(query=token)
+                                    url_to_use = urlunparse(parsed)
+                                else:
+                                    url_to_use = url
+                            else:
+                                url_to_use = url
+
+                            r = requests.get(url_to_use, timeout=30)
+                            r.raise_for_status()
+                            with open(local_path, 'wb') as f:
+                                f.write(r.content)
+                            return local_path
+                        except requests.exceptions.HTTPError as he:
+                            # Return None on HTTP errors so caller can skip this row
+                            if verbose:
+                                print(f"[SYNC_CLOUD_DB][ERROR] HTTP error downloading {url}: {he}")
+                            return None
+                        except Exception as e:
+                            if verbose:
+                                print(f"[SYNC_CLOUD_DB][ERROR] Error downloading {url}: {e}")
+                            return None
+
+                    transcript_path = download(transcript_url, 'transcript')
+                    if not transcript_path:
+                        errors.append(f"Missing or inaccessible transcript for call {call_id_val}: {transcript_url}")
+                        if verbose:
+                            print(f"[SYNC_CLOUD_DB] Could not download transcript for call {call_id_val}")
+                        continue
+
+                    agent_audio_path = download(agent_audio_url, 'agent')
+                    if not agent_audio_path:
+                        errors.append(f"Missing or inaccessible agent audio for call {call_id_val}: {agent_audio_url}")
+                        if verbose:
+                            print(f"[SYNC_CLOUD_DB] Could not download agent audio for call {call_id_val}")
+                        continue
+
+                    emp_audio_path = None
+                    if emp_audio_url:
+                        emp_audio_path = download(emp_audio_url, 'emp')
+
+                    # read transcript
+                    with open(transcript_path, 'r', encoding='utf-8') as f:
+                        transcript = f.read()
+
+                    transcript_msgs = parse_transcript_lines(transcript)
+                    sentiment_scores = get_agent_employee_sentiment(transcript_msgs)
+                    agent_sentiment_percent = sentiment_scores['agent_sentiment_percent']
+                    employee_sentiment_percent = sentiment_scores['employee_sentiment_percent']
+                    analysis = {}
+                    if transcript.strip():
+                        for section, prompt in PROMPTS.items():
+                            result_sec = generate_section(prompt, transcript)
+                            if result_sec:
+                                analysis[section] = result_sec
+                            else:
+                                analysis[section] = {"error": f"Failed to parse {section} output"}
+
+                    avg_speech_rate_agent, segment_times_agent, segment_zcrs_agent = calculate_average_speech_rate(agent_audio_path)
+                    avg_speech_rate_employee, segment_times_employee, segment_zcrs_employee = calculate_average_speech_rate(emp_audio_path) if emp_audio_path else (None, None, None)
+                    calm_score = get_calm_score(agent_audio_path)
+                    vad_times, valence_list, arousal_list, dominance_list = get_vad_over_time(agent_audio_path)
+                    sentiment_flow = get_sentiment_flow(transcript_msgs)
+
+                    context_score = (agent_sentiment_percent + (employee_sentiment_percent or 0)) / 2 / 10 if agent_sentiment_percent is not None else 0
+                    tone_score = calm_score if calm_score is not None else 0
+                    sop_score = 0
+                    if analysis.get('sop_adherence'):
+                        sop = analysis['sop_adherence']
+                        sop_steps = [sop.get('identity_verification'), sop.get('security_questions'), sop.get('two_factor_enabled'), sop.get('account_activity_review'), sop.get('security_best_practices')]
+                        sop_score = (sum(1 for s in sop_steps if s) / 5) * 1
+                    agent_score = agent_sentiment_percent / 100 if agent_sentiment_percent is not None else 0
+                    resolved_score = 0
+                    if analysis.get('call_summary') and analysis['call_summary'].get('resolved'):
+                        resolved_score = 1 if str(analysis['call_summary']['resolved']).strip().lower() == 'yes' else 0
+
+                    def get_audio_duration(filepath):
+                        try:
+                            audio = AudioSegment.from_file(filepath)
+                            return round(len(audio) / 1000, 2)
+                        except Exception:
+                            return None
+
+                    duration = get_audio_duration(agent_audio_path)
+                    department = None
+                    topic = None
+                    if analysis.get('call_summary'):
+                        department = analysis['call_summary'].get('department')
+                        topic = analysis['call_summary'].get('topic')
+
+                    def extract_agent_name(transcript):
+                        try:
+                            lines = transcript.splitlines()
+                            for line in lines:
+                                if 'Agent' in line:
+                                    parts = line.split('Agent')
+                                    if len(parts) > 1:
+                                        name_part = parts[1].strip('():- ')
+                                        return name_part.split()[0]
+                        except:
+                            pass
+                        return "Unknown"
+
+                    agent_name = extract_agent_name(transcript)
+                    dash_chars = r"[-–—‒−]"
+                    timestamps = []
+                    for line in transcript.splitlines():
+                        match = re.match(r"(\d{2}:\d{2}:\d{2})\s*" + dash_chars, line)
+                        if match:
+                            timestamps.append(match.group(1))
+                    call_start = timestamps[0] if timestamps else datetime.utcnow().strftime('%H:%M:%S')
+                    call_end = timestamps[-1] if len(timestamps) > 1 else None
+                    arousal_threshold = 0.85
+                    voice_elevation_freq = sum(1 for a in arousal_list if a > arousal_threshold)
+                    sop_steps_followed = 0
+                    if analysis.get('sop_adherence'):
+                        sop = analysis['sop_adherence']
+                        sop_steps = [sop.get('identity_verification'), sop.get('security_questions'), sop.get('two_factor_enabled'), sop.get('account_activity_review'), sop.get('security_best_practices')]
+                        sop_steps_followed = sum(1 for s in sop_steps if s)
+
+                    doc = {
+                        "agent_audio": os.path.basename(agent_audio_path),
+                        "employee_audio": os.path.basename(emp_audio_path) if emp_audio_path else None,
+                        "transcript": transcript,
+                        "analysis": analysis,
+                        "segment_times_agent": segment_times_agent,
+                        "segment_zcrs_agent": segment_zcrs_agent,
+                        "segment_times_employee": segment_times_employee,
+                        "segment_zcrs_employee": segment_zcrs_employee,
+                        "avg_speech_rate": avg_speech_rate_agent,
+                        "calm_score": calm_score,
+                        "vad_times": vad_times,
+                        "valence_list": valence_list,
+                        "arousal_list": arousal_list,
+                        "dominance_list": dominance_list,
+                        "agent_sentiment_percent": agent_sentiment_percent,
+                        "employee_sentiment_percent": employee_sentiment_percent,
+                        "sentiment_flow": sentiment_flow,
+                        "overall_score": 0.4 * context_score + 0.3 * tone_score + 1.0 * sop_score + 1.0 * agent_score + 1.0 * resolved_score,
+                        "duration": duration,
+                        "department": department,
+                        "topic": topic,
+                        "agent_name": agent_name,
+                        "call_id": call_id_val,
+                        "user_name": user_name,
+                        "user_email": user_email,
+                        "created_at": datetime.utcnow(),
+                        "call_start": call_start,
+                        "call_end": call_end,
+                        "voice_elevation_freq": voice_elevation_freq,
+                        "sop_steps_followed": sop_steps_followed
+                    }
+
+                    try:
+                        self.insert_call(doc)
+                        processed += 1
+                        last_call_id = call_id_val
+                    except Exception as e:
+                        error_str = str(e).lower()
+                        if 'duplicate entry' in error_str or 'violation of unique key constraint' in error_str:
+                            if verbose:
+                                print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
+                        else:
+                            if verbose:
+                                print(f"[ERROR] Exception inserting doc: {e}")
+                            errors.append(f"Error inserting doc for call {call_id_val}: {str(e)}")
+
+                except Exception as e:
+                    if verbose:
+                        print(f"[SYNC_CLOUD_DB][ERROR] Exception processing row: {e}")
+                    errors.append(f"Row processing error: {str(e)}")
+
+            return processed, errors, last_call_id
+        finally:
+            session.close()
 
     def get_call_by_call_id(self, call_id):
         """

@@ -9,97 +9,38 @@ from emotion_inference import calculate_average_speech_rate, get_calm_score, get
 from context_based import get_agent_employee_sentiment, parse_transcript_lines, get_sentiment_flow
 from data import CallDataRepository, get_db_url
 
-from pymongo import MongoClient
-from bson.objectid import ObjectId
+from dotenv import load_dotenv
+import uuid
 from datetime import datetime
-import glob
-import wave
-import re
 from apscheduler.schedulers.background import BackgroundScheduler
 
-# Initialize the scheduler instance
-scheduler = BackgroundScheduler()
-import certifi
-from pydub import AudioSegment
-
-from dotenv import load_dotenv
-import os
-# Load .env from parent directory (project root)
+# Load .env from project root
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
 
+# Microsoft Authentication Configuration (defaults kept from original project)
+CLIENT_ID = os.environ.get('CLIENT_ID', '9297e893-98da-423c-8c1f-24c626c6c47a')
+CLIENT_SECRET = os.environ.get('CLIENT_SECRET')
+AUTHORITY = os.environ.get('AUTHORITY', 'https://login.microsoftonline.com/f5791d91-daca-4d28-8700-680f7a2f8b6a')
+REDIRECT_PATH = os.environ.get('REDIRECT_PATH', '/getAToken')
+SCOPE = json.loads(os.environ.get('SCOPE_JSON', '[]')) if os.environ.get('SCOPE_JSON') else ["User.ReadBasic.All"]
+REDIRECT_URI = os.environ.get('REDIRECT_URI', 'http://localhost:5000/getAToken')
 
-
-# Microsoft Authentication Configuration
-CLIENT_ID = "9297e893-98da-423c-8c1f-24c626c6c47a"
-CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
-AUTHORITY = "https://login.microsoftonline.com/f5791d91-daca-4d28-8700-680f7a2f8b6a"
-REDIRECT_PATH = "/getAToken"
-SCOPE = ["User.ReadBasic.All"]
-
-REDIRECT_URI = "http://localhost:5000/getAToken"
-
+# Flask app
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'pxJ8Q~BxiUUQXC0ngGcm8FWIntjMvFRPMhQOWcrG')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-TOKEN_CACHE_DIR = 'token_cache'
+
+TOKEN_CACHE_DIR = os.path.join(os.path.dirname(__file__), 'token_cache')
 os.makedirs(TOKEN_CACHE_DIR, exist_ok=True)
 
-
-# ...existing code...
-
-# Place these route definitions after login_required is defined
-from flask import Flask, request, render_template, jsonify, session, redirect, url_for
-from send_mail_util import send_email
-import msal
-import json
-from functools import wraps
-import os
-from analytics import PROMPTS, generate_section
-from emotion_inference import calculate_average_speech_rate, get_calm_score, get_vad_over_time
-from context_based import get_agent_employee_sentiment, parse_transcript_lines, get_sentiment_flow
-
-from pymongo import MongoClient
-from bson.objectid import ObjectId
-from datetime import datetime
-import glob
-import wave
-import re
-from apscheduler.schedulers.background import BackgroundScheduler
-
-# Initialize the scheduler instance
+# Scheduler for background jobs
 scheduler = BackgroundScheduler()
-import certifi
-from pydub import AudioSegment
-
-from dotenv import load_dotenv
-import os
-# Load .env from parent directory (project root)
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
-load_dotenv(dotenv_path)
-
-
-
-# Microsoft Authentication Configuration
-CLIENT_ID = "9297e893-98da-423c-8c1f-24c626c6c47a"
-CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
-AUTHORITY = "https://login.microsoftonline.com/f5791d91-daca-4d28-8700-680f7a2f8b6a"
-REDIRECT_PATH = "/getAToken"
-SCOPE = ["User.ReadBasic.All"]
-REDIRECT_URI = "http://localhost:5000/getAToken"
-
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'pxJ8Q~BxiUUQXC0ngGcm8FWIntjMvFRPMhQOWcrG')
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-TOKEN_CACHE_DIR = 'token_cache'
-os.makedirs(TOKEN_CACHE_DIR, exist_ok=True)
 
 def _get_cache_file_path():
     session_id = session.get('session_id')
     if not session_id:
-        import uuid
         session_id = str(uuid.uuid4())
         session['session_id'] = session_id
     return os.path.join(TOKEN_CACHE_DIR, f'token_cache_{session_id}.json')
@@ -150,42 +91,19 @@ def _get_token_from_cache(scope=None):
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get("user"):
-            return redirect(url_for("login"))
+        if not session.get('user'):
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
-# Agent Performance Page
-@app.route('/agent_performance')
-@login_required
-def agent_performance():
-    return render_template('agent_performance.html', user=session.get("user"))
-
-# Real Time Operations Page
-@app.route('/real_time_operations')
-@login_required
-def real_time_operations():
-    return render_template('real_time_operations.html', user=session.get("user"))
-
-# Sentiment Analytics Page
-@app.route('/sentiment_analytics')
-@login_required
-def sentiment_analytics():
-    return render_template('sentiment_analytics.html', user=session.get("user"))
-
-# Executive Overview Page
-@app.route('/executive_overview')
-@login_required
-def executive_overview():
-    return render_template('executive_overview.html', user=session.get("user"))
 
 def _get_flow_file_path():
     session_id = session.get('session_id')
     if not session_id:
-        import uuid
         session_id = str(uuid.uuid4())
         session['session_id'] = session_id
     return os.path.join(TOKEN_CACHE_DIR, f'flow_{session_id}.json')
+
 
 def _save_flow(flow):
     flow_file = _get_flow_file_path()
@@ -194,6 +112,8 @@ def _save_flow(flow):
             json.dump(flow, f)
     except IOError:
         pass
+
+
 
 def _load_flow():
     flow_file = _get_flow_file_path()
@@ -707,158 +627,53 @@ def faq():
         "email": sess_user.get("preferred_username") or sess_user.get("email") or ''
     }
     return render_template('faq.html', user=user_ctx)
+
+@app.route('/real_time_operations')
+@login_required
+def real_time_operations():
+    # Render the real-time operations page
+    return render_template('real_time_operations.html', user=session.get('user'))
+
+
+@app.route('/agent_performance')
+@login_required
+def agent_performance():
+    return render_template('agent_performance.html', user=session.get('user'))
+
+
+@app.route('/sentiment_analytics')
+@login_required
+def sentiment_analytics():
+    return render_template('sentiment_analytics.html', user=session.get('user'))
+
+
+@app.route('/executive_overview')
+@login_required
+def executive_overview():
+    return render_template('executive_overview.html', user=session.get('user'))
 @app.route('/sync_cloud', methods=['POST'])
 @login_required
 def sync_cloud():
-    # Set your Azure Blob Storage credentials and download directory
-    storage_account_name = 'enterprisegptdrive'
-    container_name = 'vqa'
-    sas_token = 'sp=rawdl&st=2025-09-09T08:52:07Z&se=2026-01-09T17:07:07Z&sv=2024-11-04&sr=c&sig=6N5BuB0HINGPgLtA%2BQdfGUQGHEl2lM4Kgv4ofvSogX4%3D'
-    download_dir = os.path.join('Cloud_sync', 'downloaded_transcripts')
+    """Sync cloud calls by reading blob URLs from a DB table and processing them like local sync."""
+    download_dir = os.path.join(os.path.dirname(__file__), 'Cloud_sync', 'downloaded_transcripts')
     os.makedirs(download_dir, exist_ok=True)
 
-    from cloud import sync_all_calls_from_azure
-    results = sync_all_calls_from_azure(storage_account_name, container_name, sas_token, download_dir)
-    processed = 0
-    errors = []
+    table_name = os.environ.get('CLOUD_SYNC_TABLE', 'call_data11')
     repo = CallDataRepository(get_db_url())
-    for call in results:
-        try:
-            transcript_path = call['transcript']
-            agent_audio_path = call['agent_audio']
-            emp_audio_path = call['emp_audio']
-            call_id_val = call['call_id']
-            # Avoid duplicate import: check if already in DB by call_id
-            if call_id_val and repo.get_call_by_call_id(call_id_val):
-                print(f"[CLOUD SYNC] Skipping duplicate set by call_id: {call_id_val}")
-                continue
-            with open(transcript_path, 'r', encoding='utf-8') as f:
-                transcript = f.read()
-            transcript_msgs = parse_transcript_lines(transcript)
-            sentiment_scores = get_agent_employee_sentiment(transcript_msgs)
-            agent_sentiment_percent = sentiment_scores['agent_sentiment_percent']
-            employee_sentiment_percent = sentiment_scores['employee_sentiment_percent']
-            analysis = {}
-            if transcript.strip():
-                for section, prompt in PROMPTS.items():
-                    result = generate_section(prompt, transcript)
-                    if result:
-                        analysis[section] = result
-                    else:
-                        analysis[section] = {"error": f"Failed to parse {section} output"}
-            avg_speech_rate_agent, segment_times_agent, segment_zcrs_agent = calculate_average_speech_rate(agent_audio_path)
-            avg_speech_rate_employee, segment_times_employee, segment_zcrs_employee = calculate_average_speech_rate(emp_audio_path)
-            calm_score = get_calm_score(agent_audio_path)
-            vad_times, valence_list, arousal_list, dominance_list = get_vad_over_time(agent_audio_path)
-            sentiment_flow = get_sentiment_flow(transcript_msgs)
-            context_score = (agent_sentiment_percent + employee_sentiment_percent) / 2 / 10 if agent_sentiment_percent is not None and employee_sentiment_percent is not None else 0
-            tone_score = calm_score if calm_score is not None else 0
-            sop_score = 0
-            if analysis.get('sop_adherence'):
-                sop = analysis['sop_adherence']
-                sop_steps = [sop.get('identity_verification'), sop.get('security_questions'), sop.get('two_factor_enabled'), sop.get('account_activity_review'), sop.get('security_best_practices')]
-                sop_score = (sum(1 for s in sop_steps if s) / 5) * 1
-            agent_score = agent_sentiment_percent / 100 if agent_sentiment_percent is not None else 0
-            resolved_score = 0
-            if analysis.get('call_summary') and analysis['call_summary'].get('resolved'):
-                resolved_score = 1 if str(analysis['call_summary']['resolved']).strip().lower() == 'yes' else 0
-            overall_score = (
-                0.4 * context_score +
-                0.3 * tone_score +
-                1.0 * sop_score +
-                1.0 * agent_score +
-                1.0 * resolved_score
-            )
-            def get_audio_duration(filepath):
-                try:
-                    from pydub import AudioSegment
-                    audio = AudioSegment.from_file(filepath)
-                    return round(len(audio) / 1000, 2)
-                except Exception:
-                    return None
-            duration = get_audio_duration(agent_audio_path)
-            department = None
-            topic = None
-            if analysis.get('call_summary'):
-                department = analysis['call_summary'].get('department')
-                topic = analysis['call_summary'].get('topic')
-            def extract_agent_name(transcript):
-                try:
-                    lines = transcript.splitlines()
-                    for line in lines:
-                        if 'Agent' in line:
-                            parts = line.split('Agent')
-                            if len(parts) > 1:
-                                name_part = parts[1].strip('():- ')
-                                return name_part.split()[0]
-                except:
-                    pass
-                return "Unknown"
-            agent_name = extract_agent_name(transcript)
-            dash_chars = r"[-–—‒−]"
-            timestamps = []
-            for line in transcript.splitlines():
-                match = re.match(r"(\d{2}:\d{2}:\d{2})\s*" + dash_chars, line)
-                if match:
-                    timestamps.append(match.group(1))
-            call_start = timestamps[0] if timestamps else datetime.utcnow().strftime('%H:%M:%S')
-            call_end = timestamps[-1] if len(timestamps) > 1 else None
-            doc = {
-                "agent_audio": os.path.basename(agent_audio_path),
-                "employee_audio": os.path.basename(emp_audio_path),
-                "transcript": transcript,
-                "analysis": analysis,
-                "segment_times_agent": segment_times_agent,
-                "segment_zcrs_agent": segment_zcrs_agent,
-                "segment_times_employee": segment_times_employee,
-                "segment_zcrs_employee": segment_zcrs_employee,
-                "avg_speech_rate": avg_speech_rate_agent,
-                "calm_score": calm_score,
-                "vad_times": vad_times,
-                "valence_list": valence_list,
-                "arousal_list": arousal_list,
-                "dominance_list": dominance_list,
-                "agent_sentiment_percent": agent_sentiment_percent,
-                "employee_sentiment_percent": employee_sentiment_percent,
-                "sentiment_flow": sentiment_flow,
-                "overall_score": overall_score,
-                "duration": duration,
-                "department": department,
-                "topic": topic,
-                "agent_name": agent_name,
-                "call_id": call_id_val,
-                "user_name": session.get("user", {}).get("name", "Unknown"),
-                "user_email": session.get("user", {}).get("preferred_username", ""),
-                "created_at": datetime.utcnow(),
-                "call_start": call_start,
-                "call_end": call_end
-            }
-            try:
-                repo.insert_call(doc)
-                processed += 1
-            except Exception as e:
-                error_str = str(e).lower()
-                if 'duplicate entry' in error_str or 'violation of unique key constraint' in error_str:
-                    print(f"[DEDUP] Duplicate call_id {doc.get('call_id')} not inserted.")
-                else:
-                    print(f"[ERROR] Exception inserting doc: {e}")
-                    errors.append(f"Error inserting doc: {str(e)}")
-            # Optionally delete files after sync
-            for f in [transcript_path, agent_audio_path, emp_audio_path]:
-                try:
-                    if f and os.path.exists(f):
-                        os.remove(f)
-                        print(f"[CLOUD SYNC] Deleted file: {f}")
-                except Exception as e:
-                    print(f"[CLOUD SYNC][ERROR] Could not delete file {f}: {e}")
-        except Exception as e:
-            print(f"[CLOUD SYNC][ERROR] Exception processing call {call.get('call_id', 'N/A')}: {e}")
-            errors.append(f"Error processing call {call.get('call_id', 'N/A')}: {str(e)}")
+    processed, errors, last_call_id = repo.sync_cloud_from_db(
+        table_name=table_name,
+        download_dir=download_dir,
+        user_name=session.get('user', {}).get('name', 'Unknown'),
+        user_email=session.get('user', {}).get('preferred_username', ''),
+        verbose=True
+    )
+
     if errors:
         print(f"[CLOUD SYNC] Errors encountered: {errors}")
         return jsonify({"status": "error", "processed": processed, "errors": errors}), 500
+
     print(f"[CLOUD SYNC] Cloud sync complete. {processed} new calls imported.")
-    return jsonify({"status": "success", "processed": processed}), 200
+    return jsonify({"status": "success", "processed": processed, "last_call_id": last_call_id}), 200
 
 @app.route('/call/<call_id>')
 @login_required

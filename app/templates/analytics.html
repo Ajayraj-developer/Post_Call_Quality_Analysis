@@ -503,27 +503,69 @@ function populateDashboard(analysisData) {
     }
 
     // SOP Adherence
-    if (analysisData.sop_adherence) {
-        const sop = analysisData.sop_adherence;
-        const checklist = document.querySelector('.checklist');
-        checklist.innerHTML = ''; // Clear existing items
-        
-        // Add items dynamically
-        const items = [
-            {text: "Identity verification completed", key: "identity_verification"},
-            {text: "Security questions not asked", key: "security_questions"},
-            {text: "Two-factor authentication enabled", key: "two_factor_enabled"},
-            {text: "Account activity review skipped", key: "account_activity_review"},
-            {text: "Security best practices explained", key: "security_best_practices"}
-        ];
-        
-        items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = `check-item ${sop[item.key] ? 'complete' : 'incomplete'}`;
-            div.textContent = item.text;
-            checklist.appendChild(div);
-        });
-    }
+    // SOP Adherence
+if (analysisData.sop_adherence) {
+
+    const sop = analysisData.sop_adherence;
+
+    const checklist =
+        document.querySelector('.checklist');
+
+    checklist.innerHTML = '';
+
+    const items = [
+
+        {
+            positive: "Identity verification completed",
+            negative: "Identity verification not completed",
+            key: "identity_verification"
+        },
+
+        {
+            positive: "Security questions asked",
+            negative: "Security questions not asked",
+            key: "security_questions"
+        },
+
+        {
+            positive: "Two-factor authentication discussed",
+            negative: "Two-factor authentication not discussed",
+            key: "two_factor_enabled"
+        },
+
+        {
+            positive: "Account activity reviewed",
+            negative: "Account activity review skipped",
+            key: "account_activity_review"
+        },
+
+        {
+            positive: "Security best practices explained",
+            negative: "Security best practices not explained",
+            key: "security_best_practices"
+        }
+    ];
+
+    items.forEach(item => {
+
+        const div =
+            document.createElement('div');
+
+        div.className =
+            `check-item ${
+                sop[item.key]
+                    ? 'complete'
+                    : 'incomplete'
+            }`;
+
+        div.textContent =
+            sop[item.key]
+                ? item.positive
+                : item.negative;
+
+        checklist.appendChild(div);
+    });
+}
 
     // Communication Quality
     if (analysisData.communication_quality) {
@@ -549,51 +591,120 @@ function populateDashboard(analysisData) {
         `;
     }
 
-    // Conversation Timeline
- if (analysisData.conversation_timeline) {
+// Conversation Timeline
+if (analysisData.conversation_timeline) {
+
     const ct = analysisData.conversation_timeline;
-    const timelineContainer = document.querySelector('.conversation-flow');
+
+    const timelineContainer =
+        document.querySelector('.conversation-flow');
+
     timelineContainer.innerHTML = '';
 
-ct.timeline.forEach((item, index) => {
-    console.log(`Message ${index + 1} - Speaker: ${item.speaker}`); // Debug log
-    const isCustomer = item.speaker.toLowerCase() === 'customer'; // safer detection
+    ct.timeline.forEach((item, index) => {
 
-        const messageDiv = document.createElement('div');
+        const speaker =
+            (item.speaker || '').trim().toLowerCase();
+
+        const isCustomer =
+            speaker === 'customer' ||
+            speaker === 'employee';
+
+        const messageDiv =
+            document.createElement('div');
+
         messageDiv.style.display = 'flex';
+
         messageDiv.style.alignItems = 'flex-start';
+
         messageDiv.style.marginBottom = '16px';
-        messageDiv.style.justifyContent = isCustomer ? 'flex-end' : 'flex-start';
 
-        const avatarUrl = isCustomer 
-            ? 'https://i.pravatar.cc/32?img=5' 
-            : 'https://i.pravatar.cc/32?img=3';
+        messageDiv.style.width = '100%';
 
-        const bubbleColor = isCustomer ? '#ffecec' : '#e6f0ff';
-        const textAlign = isCustomer ? 'right' : 'left';
-        const avatarMargin = isCustomer ? 'margin-left: 10px;' : 'margin-right: 10px;';
-        const avatarImg = `<img src="${avatarUrl}" alt="${isCustomer ? 'Customer' : 'Agent'}" style="border-radius: 50%; ${avatarMargin}">`;
+        messageDiv.style.justifyContent =
+            isCustomer
+                ? 'flex-end'
+                : 'flex-start';
+
+        const avatarUrl =
+            isCustomer
+                ? 'https://i.pravatar.cc/32?img=5'
+                : 'https://i.pravatar.cc/32?img=3';
+
+        const bubbleColor =
+            isCustomer
+                ? '#ffecec'
+                : '#e6f0ff';
+
+        const textAlign =
+            isCustomer
+                ? 'right'
+                : 'left';
+
+        const avatarMargin =
+            isCustomer
+                ? 'margin-left: 10px;'
+                : 'margin-right: 10px;';
+
+        const avatarImg = `
+            <img
+                src="${avatarUrl}"
+                alt="${isCustomer ? 'Customer' : 'Agent'}"
+                style="
+                    border-radius: 50%;
+                    width: 32px;
+                    height: 32px;
+                    ${avatarMargin}
+                "
+            >
+        `;
 
         const messageContent = `
-            <div style="background-color: ${bubbleColor}; padding: 10px 14px; border-radius: 10px; max-width: 80%;">
-                <div style="font-size: 14px;">${item.content}</div>
-                <div style="font-size: 12px; color: #888; margin-top: 4px; text-align: ${textAlign};">${item.timestamp}</div>
+            <div style="
+                background-color: ${bubbleColor};
+                padding: 10px 14px;
+                border-radius: 10px;
+                max-width: 80%;
+            ">
+                <div style="
+                    font-size: 13px;
+                    font-weight: 600;
+                    margin-bottom: 4px;
+                    color: #374151;
+                ">
+                    ${item.speaker}
+                </div>
+
+                <div style="font-size: 14px;">
+                    ${item.content}
+                </div>
+
+                <div style="
+                    font-size: 12px;
+                    color: #888;
+                    margin-top: 4px;
+                    text-align: ${textAlign};
+                ">
+                    ${item.timestamp}
+                </div>
             </div>
         `;
 
-        messageDiv.innerHTML = isCustomer 
-            ? `${messageContent}${avatarImg}` 
-            : `${avatarImg}${messageContent}`;
+        messageDiv.innerHTML =
+            isCustomer
+                ? `${messageContent}${avatarImg}`
+                : `${avatarImg}${messageContent}`;
 
         timelineContainer.appendChild(messageDiv);
     });
-  }
+}
 }
 
 // When page loads, check for analysis data passed from Flask
 document.addEventListener('DOMContentLoaded', function() {
     // Get analysis data passed from Flask template
-    const analysisData = JSON.parse('{{ analysis|tojson|safe }}');
+    const analysisData =
+    {{ analysis|default({}, true)|tojson|safe }};
     
     // Populate the dashboard
     populateDashboard(analysisData);
