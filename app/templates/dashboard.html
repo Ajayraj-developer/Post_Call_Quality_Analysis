@@ -820,6 +820,26 @@
   </div>
   <script>
     lucide.createIcons();
+
+    const initialCallCount = {{ call_list|length }};
+    let lastKnownCallCount = initialCallCount;
+
+    function refreshDashboardIfNeeded() {
+      fetch('/api/call_count', { credentials: 'same-origin' })
+        .then(response => response.json())
+        .then(data => {
+          const latestCount = Number(data.count || 0);
+          if (latestCount > lastKnownCallCount) {
+            window.location.reload();
+          } else {
+            lastKnownCallCount = latestCount;
+          }
+        })
+        .catch(() => {});
+    }
+
+    setInterval(refreshDashboardIfNeeded, 15000);
+
     // Chart.js for Top 5 Engineers (Dynamic)
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/chart.js';

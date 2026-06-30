@@ -864,7 +864,7 @@ def sync_local():
 
 
 # --- Scheduled Sync Support (Local + Cloud) ---
-current_sync_interval = {'minutes': 5}
+current_sync_interval = {'minutes': 1}
 
 def perform_local_sync():
     """Background job to sync local files using CallDataRepository."""
@@ -949,7 +949,7 @@ def set_sync_interval():
     # Accept both JSON and form data
     data = request.get_json(silent=True) or request.form or {}
     try:
-        minutes = int(data.get('minutes', 5))
+        minutes = int(data.get('minutes', 1))
         if minutes < 1:
             return jsonify({'status': 'error', 'message': 'Interval must be >= 1 minute'}), 400
     except Exception:
