@@ -68,33 +68,84 @@ def get_agent_employee_sentiment(transcript):
     }
 
 def parse_transcript_lines(transcript_text):
-    lines = transcript_text.strip().splitlines()
+    if not transcript_text:
+        return []
+
+    lines = [line.strip() for line in transcript_text.splitlines() if line and line.strip()]
     transcript = []
-    i = 0
-    while i < len(lines):
-        match = re.match(r'^(\d{1,2}:\d{2}:\d{2})\s*[–-]\s*([^:]+):\s*$', lines[i])
+    pending_message = None
+
+    header_markers = {
+        'call transcript',
+        'end of transcript',
+        '=====================================',
+        'ticket id:',
+        'date:',
+        'agent:',
+        'employee:',
+    }
+
+    for raw_line in lines:
+        line = raw_line.strip()
+        lowered = line.lower()
+        if lowered in header_markers or lowered.startswith('call transcript') or lowered.startswith('end of transcript'):
+            continue
+
+        match = re.match(
+            r'^\s*(?:\[(?P<bracket_time>\d{1,2}:\d{2}:\d{2})\]|(?P<time>\d{1,2}:\d{2}:\d{2}))\s*(?:[–-]\s*|\s+)?(?P<speaker>[^:]+?)\s*:\s*(?P<text>.*)$',
+            line,
+        )
+        speaker_only_match = re.match(r'^\s*(Agent|Employee|Customer|Support|Agent\s*\([^\)]+\)|Employee\s*\([^\)]+\)|Customer\s*\([^\)]+\)|Support\s*\([^\)]+\))\s*:\s*(?P<text>.*)$', line, re.IGNORECASE)
+
         if match:
-            speaker = match.group(2).strip()
-            if i + 1 < len(lines):
-                text = lines[i].strip() + ' ' + lines[i+1].strip()
-                transcript.append({"speaker": speaker, "text": text})
-                i += 2
+            if pending_message is not None:
+                transcript.append(pending_message)
+            speaker = match.group('speaker').strip()
+            text = (match.group('text') or '').strip()
+            timestamp = match.group('bracket_time') or match.group('time')
+            pending_message = {"speaker": speaker, "text": text, "timestamp": timestamp}
+            if not text:
+                continue
+            transcript.append({"speaker": speaker, "text": text, "timestamp": timestamp})
+            pending_message = None
+            continue
+
+        if speaker_only_match:
+            if pending_message is not None:
+                transcript.append(pending_message)
+            speaker = speaker_only_match.group(1).strip()
+            text = (speaker_only_match.group('text') or '').strip()
+            pending_message = {"speaker": speaker, "text": text, "timestamp": None}
+            if not text:
+                continue
+            transcript.append({"speaker": speaker, "text": text, "timestamp": None})
+            pending_message = None
+            continue
+
+        if pending_message is not None:
+            if pending_message['text']:
+                pending_message['text'] = f"{pending_message['text']} {line}"
             else:
-                transcript.append({"speaker": speaker, "text": lines[i].strip()})
-                i += 1
-        else:
-            i += 1
+                pending_message['text'] = line
+            continue
+
+    if pending_message is not None and pending_message.get('text'):
+        transcript.append(pending_message)
+
     return transcript
 
 def get_sentiment_flow(transcript):
     flow = []
     for i, msg in enumerate(transcript):
         sentiment, score = predict_sentiment(msg['text'], pipeline)
-        match = re.match(r'^(\d{1,2}:\d{2}:\d{2})', msg['text'])
-        time = match.group(1) if match else str(i+1)
+        role = get_role_from_text(msg['text'], msg['speaker'])
+        timestamp = msg.get('timestamp')
+        if not timestamp:
+            match = re.match(r'^(\d{1,2}:\d{2}:\d{2})', msg['text'])
+            timestamp = match.group(1) if match else str(i + 1)
         flow.append({
-            'time': time,
-            'speaker': get_role_from_text(msg['text'], msg['speaker']).capitalize() if get_role_from_text(msg['text'], msg['speaker']) else msg['speaker'],
+            'time': timestamp,
+            'speaker': role.capitalize() if role else msg['speaker'],
             'text': msg['text'],
             'sentiment': sentiment,
             'score': score

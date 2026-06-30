@@ -7,7 +7,7 @@ import os
 from analytics import PROMPTS, generate_section
 from emotion_inference import calculate_average_speech_rate, get_calm_score, get_vad_over_time
 from context_based import get_agent_employee_sentiment, parse_transcript_lines, get_sentiment_flow
-from data import CallDataRepository, get_db_url
+from data import CallDataRepository, get_db_url, extract_agent_name
 
 from dotenv import load_dotenv
 import uuid
@@ -273,18 +273,6 @@ def upload_audio():
             topic = analysis['call_summary'].get('topic')
 
         # Extract agent name from transcript using extract_agent_name logic from new_app.py
-        def extract_agent_name(transcript):
-            try:
-                lines = transcript.splitlines()
-                for line in lines:
-                    if 'Agent' in line:
-                        parts = line.split('Agent')
-                        if len(parts) > 1:
-                            name_part = parts[1].strip('():- ')
-                            return name_part.split()[0]  # just the name
-            except:
-                pass
-            return "Unknown"
         agent_name = extract_agent_name(transcript)
 
         # Extract timestamps from transcript (first and last timestamp for call duration)
@@ -378,18 +366,6 @@ def upload_audio():
     call_list = []
     for call in call_records:
         transcript = call.get("transcript", "")
-        def extract_agent_name(transcript):
-            try:
-                lines = transcript.splitlines()
-                for line in lines:
-                    if 'Agent' in line:
-                        parts = line.split('Agent')
-                        if len(parts) > 1:
-                            name_part = parts[1].strip('():- ')
-                            return name_part.split()[0]
-            except:
-                pass
-            return "Unknown"
         agent_name = call.get("agent_name") or extract_agent_name(transcript)
         call_summary = (call.get("analysis") or {}).get("call_summary", {}) if call.get("analysis") else {}
         def get_sentiment_label_and_icon(percent):
@@ -495,22 +471,11 @@ def dashboard():
     agent_stats = {}
     for call in call_records:
         transcript = call.get("transcript", "")
-        def extract_agent_name(transcript):
-            try:
-                lines = transcript.splitlines()
-                for line in lines:
-                    if 'Agent' in line:
-                        parts = line.split('Agent')
-                        if len(parts) > 1:
-                            name_part = parts[1].strip('():- ')
-                            return name_part.split()[0]
-            except:
-                pass
-            return "Unknown"
-        agent_name = call.get("agent_name") or extract_agent_name(transcript)
-        # Skip empty or placeholder agent names
+        agent_name = call.get("agent_name")
         if not agent_name or agent_name.lower() in ["", "unknown", "agent"]:
-            continue
+            agent_name = extract_agent_name(transcript)
+        if not agent_name or agent_name.lower() in ["", "unknown", "agent"]:
+            agent_name = "Unknown"
         # Parse analysis/call_summary if present
         call_summary = (call.get("analysis") or {}).get("call_summary", {}) if call.get("analysis") else {}
         def get_sentiment_label_and_icon(percent):
@@ -574,7 +539,7 @@ def dashboard():
             "employee_sentiment_percent": call.get("employee_sentiment_percent", None)
         })
     # Prepare Top 5 Engineers data (skip agents with count==0)
-    valid_agents = [(name, stats) for name, stats in agent_stats.items() if stats['count'] > 0]
+    valid_agents = [(name, stats) for name, stats in agent_stats.items() if stats['count'] > 0 and name.lower() not in ["", "unknown", "agent"]]
     sorted_agents = sorted(valid_agents, key=lambda x: (x[1]['overall']/x[1]['count'] if x[1]['count'] else 0), reverse=True)
     top5 = []
     for i in range(5):
@@ -683,6 +648,23 @@ def view_call(call_id):
     call = repo.get_call_by_call_id(call_id)
     if not call:
         return "Call not found", 404
+    # Recompute sentiment values from transcript when the stored values are missing or zero.
+    transcript = call.get('transcript')
+    if transcript:
+        parsed_transcript = parse_transcript_lines(transcript)
+        needs_sentiment_recompute = (
+            not call.get('agent_sentiment_percent')
+            or not call.get('employee_sentiment_percent')
+            or not call.get('sentiment_flow')
+            or call.get('agent_sentiment_percent') == 0
+            or call.get('employee_sentiment_percent') == 0
+        )
+        if parsed_transcript and needs_sentiment_recompute:
+            sentiment_scores = get_agent_employee_sentiment(parsed_transcript)
+            call['agent_sentiment_percent'] = sentiment_scores['agent_sentiment_percent']
+            call['employee_sentiment_percent'] = sentiment_scores['employee_sentiment_percent']
+            call['sentiment_flow'] = get_sentiment_flow(parsed_transcript)
+
     # Format duration: show seconds if <60, else show minutes
     raw_duration = call.get('duration')
     if raw_duration is not None:
@@ -797,18 +779,6 @@ def sync_local():
                 department = analysis['call_summary'].get('department')
                 topic = analysis['call_summary'].get('topic')
             # Extract agent name from transcript
-            def extract_agent_name(transcript):
-                try:
-                    lines = transcript.splitlines()
-                    for line in lines:
-                        if 'Agent' in line:
-                            parts = line.split('Agent')
-                            if len(parts) > 1:
-                                name_part = parts[1].strip('():- ')
-                                return name_part.split()[0]
-                except:
-                    pass
-                return "Unknown"
             agent_name = extract_agent_name(transcript)
             # Extract timestamps from transcript
             dash_chars = r"[-–—‒−]"
@@ -834,6 +804,10 @@ def sync_local():
                     sop.get('security_best_practices')
                 ]
                 sop_steps_followed = sum(1 for s in sop_steps if s)
+            try:
+                created_at_val = datetime.utcfromtimestamp(os.path.getmtime(txt_path))
+            except Exception:
+                created_at_val = datetime.utcnow()
             doc = {
                 "agent_audio": os.path.basename(agent_audio_path),
                 "employee_audio": os.path.basename(emp_audio_path),
@@ -860,7 +834,7 @@ def sync_local():
                 "call_id": call_id_val,
                 "user_name": session.get("user", {}).get("name", "Unknown"),
                 "user_email": session.get("user", {}).get("preferred_username", ""),
-                "created_at": datetime.utcnow(),
+                "created_at": created_at_val,
                 "call_start": call_start,
                 "call_end": call_end,
                 "voice_elevation_freq": voice_elevation_freq,
@@ -889,7 +863,7 @@ def sync_local():
 
 
 
-# --- Scheduled Local Sync Support ---
+# --- Scheduled Sync Support (Local + Cloud) ---
 current_sync_interval = {'minutes': 5}
 
 def perform_local_sync():
@@ -898,8 +872,33 @@ def perform_local_sync():
     local_dir = os.path.join(os.path.dirname(__file__), 'local_sync')
     processed, errors = repo.sync_local_folder(local_dir, user_name=None, user_email=None, verbose=True)
     if errors:
-        print(f"[SCHEDULER] Errors encountered: {errors}")
+        print(f"[SCHEDULER] Local sync errors: {errors}")
     print(f"[SCHEDULER] Local sync complete. {processed} new calls imported.")
+
+def perform_cloud_sync():
+    """Background job to sync cloud calls from the external DB table automatically."""
+    try:
+        download_dir = os.path.join(os.path.dirname(__file__), 'Cloud_sync', 'downloaded_transcripts')
+        os.makedirs(download_dir, exist_ok=True)
+        table_name = os.environ.get('CLOUD_SYNC_TABLE', 'call_data11')
+        repo = CallDataRepository(get_db_url())
+        processed, errors, last_call_id = repo.sync_cloud_from_db(
+            table_name=table_name,
+            download_dir=download_dir,
+            user_name='AutoSync',
+            user_email='',
+            verbose=True
+        )
+        if errors:
+            print(f"[SCHEDULER] Cloud sync errors: {errors}")
+        print(f"[SCHEDULER] Cloud sync complete. {processed} new calls imported.")
+    except Exception as e:
+        print(f"[SCHEDULER] Cloud sync exception: {e}")
+
+def perform_combined_sync():
+    """Background job that runs both local and cloud sync."""
+    perform_local_sync()
+    perform_cloud_sync()
 
 def get_sync_job_status():
     job = scheduler.get_job('local_sync_job')
@@ -928,8 +927,8 @@ def get_sync_job_status():
 # --- Ensure scheduler and job are always started ---
 def ensure_scheduler_job():
     if not scheduler.get_job('local_sync_job'):
-        print("[SCHEDULER] Adding local_sync_job.")
-        scheduler.add_job(perform_local_sync, 'interval', minutes=current_sync_interval['minutes'], id='local_sync_job', replace_existing=True)
+        print("[SCHEDULER] Adding combined sync job (local + cloud).")
+        scheduler.add_job(perform_combined_sync, 'interval', minutes=current_sync_interval['minutes'], id='local_sync_job', replace_existing=True)
     if not scheduler.running:
         print("[SCHEDULER] Starting scheduler.")
         scheduler.start()
@@ -963,13 +962,22 @@ def set_sync_interval():
     except Exception as e:
         print(f"[SCHEDULER][ERROR] Could not remove job: {e}")
     try:
-        scheduler.add_job(perform_local_sync, 'interval', minutes=minutes, id='local_sync_job', replace_existing=True)
+        scheduler.add_job(perform_combined_sync, 'interval', minutes=minutes, id='local_sync_job', replace_existing=True)
         current_sync_interval['minutes'] = minutes
-        print(f"[SCHEDULER] Updated local_sync_job interval to {minutes} minutes.")
+        print(f"[SCHEDULER] Updated sync job interval to {minutes} minutes (local + cloud).")
         return jsonify({'status': 'success', 'interval': minutes})
     except Exception as e:
         print(f"[SCHEDULER][ERROR] Could not add job: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# --- API endpoint for dashboard auto-refresh polling ---
+@app.route('/api/call_count', methods=['GET'])
+@login_required
+def api_call_count():
+    """Returns the current total call count so the dashboard can detect new calls."""
+    repo = CallDataRepository(get_db_url())
+    all_calls = repo.get_all_calls()
+    return jsonify({'count': len(all_calls)})
 
 # Only run Flask app if main
 if __name__ == '__main__':

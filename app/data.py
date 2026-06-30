@@ -4,6 +4,111 @@ from sqlalchemy.orm import sessionmaker
 import datetime
 import os
 from urllib.parse import quote_plus
+import re
+
+def extract_agent_name(transcript):
+    """
+    Robust extraction of agent/support name from transcript lines.
+    Supports formats like:
+      - 00:00:05 - Agent (Raghav): hello
+      - 00:00:05 - Agent1: hello
+      - 00:00:05 - support: Hello, my name is Alex.
+    """
+    if not transcript:
+        return "Unknown"
+    try:
+        lines = transcript.splitlines()
+        for line in lines:
+            # Match "timestamp - Speaker: text"
+            match = re.match(r'^\s*\d{1,2}:\d{2}:\d{2}\s*[–-]\s*([^:]+):', line)
+            if match:
+                speaker = match.group(1).strip()
+                if speaker.lower() != 'customer':
+                    # Extract name from parentheses if present (e.g. Agent (Raghav))
+                    paren_match = re.search(r'\(([^)]+)\)', speaker)
+                    if paren_match:
+                        return paren_match.group(1).strip()
+                    
+                    # If matches Agent\d+ or support\d+
+                    if re.match(r'^(agent|support)\d+$', speaker, re.IGNORECASE):
+                        return speaker
+                    
+                    # Try finding "my name is X" or "this is X" in line
+                    text_part = line[match.end():].strip()
+                    name_match = re.search(r'\bmy\s+name\s+is\s+([a-zA-Z]+)\b', text_part, re.IGNORECASE)
+                    if name_match:
+                        return name_match.group(1).capitalize()
+                    
+                    name_match2 = re.search(r'\bthis\s+is\s+([a-zA-Z]+)\b', text_part, re.IGNORECASE)
+                    if name_match2:
+                        possible_name = name_match2.group(1).capitalize()
+                        if possible_name.lower() not in ['a', 'the', 'not', 'just', 'an', 'support', 'agent']:
+                            return possible_name
+                    
+                    # If speaker label is not generic, use it
+                    if speaker.lower() not in ['support', 'agent']:
+                        return speaker
+                    
+                    return speaker
+    except Exception:
+        pass
+    return "Unknown"
+
+
+def extract_call_timestamp(rowdict=None, source_name=None):
+    """Extract the actual call completion timestamp from MSSQL-like values or filenames."""
+    candidates = []
+    if isinstance(rowdict, dict):
+        for key in ('date_completed', 'datecompleted', 'completed_at', 'created_at', 'timestamp', 'call_timestamp'):
+            value = rowdict.get(key)
+            if value:
+                candidates.append(value)
+
+    if source_name:
+        candidates.append(source_name)
+
+    for candidate in candidates:
+        if not candidate:
+            continue
+        if isinstance(candidate, datetime.datetime):
+            return candidate
+        if isinstance(candidate, str):
+            text = candidate.strip()
+            if not text:
+                continue
+            patterns = [
+                r'(?P<dt>\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?)',
+                r'(?P<dt>\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}(?:Z|))',
+            ]
+            for pattern in patterns:
+                match = re.search(pattern, text)
+                if match:
+                    dt_str = match.group('dt')
+                    dt_str = dt_str.replace('T', ' ')
+                    dt_str = dt_str.replace('-', ':', 2) if 'T' not in candidate and dt_str.count('-') >= 2 else dt_str
+                    dt_str = dt_str.replace('Z', '')
+                    candidates_to_try = [dt_str]
+                    if ' ' in dt_str:
+                        base, rest = dt_str.split(' ', 1)
+                        candidates_to_try.append(base + ' ' + rest.replace(':', '-', 2))
+                    for candidate_dt in candidates_to_try:
+                        try:
+                            if len(candidate_dt) >= 19 and candidate_dt[10] == ' ':
+                                return datetime.datetime.strptime(candidate_dt[:19], '%Y-%m-%d %H:%M:%S')
+                            if len(candidate_dt) >= 19 and candidate_dt[10] == 'T':
+                                return datetime.datetime.strptime(candidate_dt[:19], '%Y-%m-%dT%H:%M:%S')
+                            # Handle filename-style strings like 2026-06-29T05-11-46-725Z
+                            if re.match(r'^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}', candidate_dt):
+                                return datetime.datetime.strptime(candidate_dt, '%Y-%m-%dT%H-%M-%S')
+                            return datetime.datetime.fromisoformat(candidate_dt.replace('Z', '+00:00'))
+                        except ValueError:
+                            continue
+            # Fallback for values like '2026-06-29 05:11:58.817'
+            try:
+                return datetime.datetime.strptime(text.split('.')[0], '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                pass
+    return None
 
 Base = declarative_base()
 
@@ -148,18 +253,6 @@ class CallDataRepository:
                 if analysis.get('call_summary'):
                     department = analysis['call_summary'].get('department')
                     topic = analysis['call_summary'].get('topic')
-                def extract_agent_name(transcript):
-                    try:
-                        lines = transcript.splitlines()
-                        for line in lines:
-                            if 'Agent' in line:
-                                parts = line.split('Agent')
-                                if len(parts) > 1:
-                                    name_part = parts[1].strip('():- ')
-                                    return name_part.split()[0]
-                    except:
-                        pass
-                    return "Unknown"
                 agent_name = extract_agent_name(transcript)
                 dash_chars = r"[-–—‒−]"
                 timestamps = []
@@ -182,6 +275,10 @@ class CallDataRepository:
                         sop.get('security_best_practices')
                     ]
                     sop_steps_followed = sum(1 for s in sop_steps if s)
+                try:
+                    created_at_val = datetime.utcfromtimestamp(os.path.getmtime(txt_path))
+                except Exception:
+                    created_at_val = datetime.utcnow()
                 doc = {
                     "agent_audio": os.path.basename(agent_audio_path),
                     "employee_audio": os.path.basename(emp_audio_path),
@@ -208,7 +305,7 @@ class CallDataRepository:
                     "call_id": call_id_val,
                     "user_name": user_name,
                     "user_email": user_email,
-                    "created_at": datetime.utcnow(),
+                    "created_at": created_at_val,
                     "call_start": call_start,
                     "call_end": call_end,
                     "voice_elevation_freq": voice_elevation_freq,
@@ -276,6 +373,7 @@ class CallDataRepository:
                     transcript_url = rowdict.get('transcript_file') or rowdict.get('transcript')
                     agent_audio_url = rowdict.get('agent_audio_file') or rowdict.get('agent_audio') or rowdict.get('agent_audio_file_url')
                     emp_audio_url = rowdict.get('emp_audio_file') or rowdict.get('employee_audio') or rowdict.get('emp_audio_file_url')
+                    date_completed_val = rowdict.get('date_completed') or rowdict.get('datecompleted') or rowdict.get('completed_at')
 
                     if not call_id_val:
                         if verbose:
@@ -401,19 +499,6 @@ class CallDataRepository:
                         department = analysis['call_summary'].get('department')
                         topic = analysis['call_summary'].get('topic')
 
-                    def extract_agent_name(transcript):
-                        try:
-                            lines = transcript.splitlines()
-                            for line in lines:
-                                if 'Agent' in line:
-                                    parts = line.split('Agent')
-                                    if len(parts) > 1:
-                                        name_part = parts[1].strip('():- ')
-                                        return name_part.split()[0]
-                        except:
-                            pass
-                        return "Unknown"
-
                     agent_name = extract_agent_name(transcript)
                     dash_chars = r"[-–—‒−]"
                     timestamps = []
@@ -430,6 +515,10 @@ class CallDataRepository:
                         sop = analysis['sop_adherence']
                         sop_steps = [sop.get('identity_verification'), sop.get('security_questions'), sop.get('two_factor_enabled'), sop.get('account_activity_review'), sop.get('security_best_practices')]
                         sop_steps_followed = sum(1 for s in sop_steps if s)
+
+                    created_at_val = extract_call_timestamp(rowdict=rowdict, source_name=transcript_url)
+                    if created_at_val is None:
+                        created_at_val = datetime.utcnow()
 
                     doc = {
                         "agent_audio": os.path.basename(agent_audio_path),
@@ -457,7 +546,7 @@ class CallDataRepository:
                         "call_id": call_id_val,
                         "user_name": user_name,
                         "user_email": user_email,
-                        "created_at": datetime.utcnow(),
+                        "created_at": created_at_val,
                         "call_start": call_start,
                         "call_end": call_end,
                         "voice_elevation_freq": voice_elevation_freq,
