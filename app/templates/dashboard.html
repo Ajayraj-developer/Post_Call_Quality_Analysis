@@ -286,10 +286,10 @@
             <i data-lucide="help-circle" class="h-5 w-5"></i>
             <span class="font-medium">FAQ</span>
           </a>
-          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
+          <a href="https://wipgenai.lwpcoe.com/frontend_vqa_live/" target="_blank" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
             <i data-lucide="radio" class="h-5 w-5"></i>
             <span class="font-medium">Live Board</span>
-          </button>
+          </a>
           <a href="{{ url_for('upload_audio') }}" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-gray-900 hover:bg-gray-100">
             <i data-lucide="settings" class="h-5 w-5"></i>
             <span class="font-medium">Settings</span>
@@ -830,7 +830,26 @@
         .then(data => {
           const latestCount = Number(data.count || 0);
           if (latestCount > lastKnownCallCount) {
-            window.location.reload();
+            fetch(window.location.href, { credentials: 'same-origin' })
+              .then(res => res.text())
+              .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTable = doc.getElementById('callAnalysisTable');
+                const oldTable = document.getElementById('callAnalysisTable');
+                if (newTable && oldTable) {
+                  const newTbody = newTable.querySelector('tbody');
+                  const oldTbody = oldTable.querySelector('tbody');
+                  if (newTbody && oldTbody) {
+                    oldTbody.innerHTML = newTbody.innerHTML;
+                    const searchInput = document.getElementById('callTableSearch');
+                    if (searchInput && searchInput.value) {
+                      searchInput.dispatchEvent(new Event('input'));
+                    }
+                  }
+                  lastKnownCallCount = latestCount;
+                }
+              });
           } else {
             lastKnownCallCount = latestCount;
           }
@@ -838,7 +857,7 @@
         .catch(() => {});
     }
 
-    setInterval(refreshDashboardIfNeeded, 30000);
+    setInterval(refreshDashboardIfNeeded, 45000);
 
     // Chart.js for Top 5 Engineers (Dynamic)
     const script = document.createElement('script');
